@@ -1,0 +1,18 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+bondi
+</name>
+</assembly>
+<members>
+<member name="M:bondi.StringBuilderExtensions.AppendRandomString(System.Text.StringBuilder,System.Int32)">
+	<summary>
+ Generates a random sequence of letters and numbers
+ </summary>
+	<param name="builder">The builder that is being extended</param>
+	<param name="len">The number of random characters to append to the string</param>
+	<returns>The string builder</returns>
+</member>
+</members>
+</doc>
