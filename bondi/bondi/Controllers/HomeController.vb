@@ -18,49 +18,50 @@ Public Class HomeController
 
         'Return RedirectToAction("automate", "member")
         Return RedirectToAction("index", "member")
+        'Return RedirectToAction("logon", "account")
 
 
         ' Establish link to data tables.
-        Using db As New wavesDataContext
+        'Using db As New wavesDataContext
 
-            ' Section: Get trending blog entries
-            ' Get top three trending blog article short names and index to pass to the top bar of the landing page.  The code pulls the last three blog entries loops through
-            ' a counter and assigns the Title to the variable datafield for display on the page.
+        ' Section: Get trending blog entries
+        ' Get top three trending blog article short names and index to pass to the top bar of the landing page.  The code pulls the last three blog entries loops through
+        ' a counter and assigns the Title to the variable datafield for display on the page.
 
-            Dim model As New wavesViewModel With { _
-                                                    .AllBlogs = db.GetXPosts(3) _
-                                                  }
-
-
-            Dim loopcntr As Integer = 1
-            For Each item In model.AllBlogs
-                If loopcntr = 1 Then
-                    ViewData("article1") = item.Name.ToString()
-                    Dim testme As Integer = item.id
-                ElseIf loopcntr = 2 Then
-                    ViewData("article2") = item.Name.ToString()
-                Else
-                    ViewData("article3") = item.Name.ToString()
-                End If
-                loopcntr = loopcntr + 1
-            Next
-            loopcntr = 0
-
-            '' Section: Get Total Wins  
-            '' Get total number of winning trades and total closed trades for the current month to display in the top-bar of the landing page.
-
-            Dim cmw = From c In db.TradeDetails Where c.open = False And c.closeDATE.Year = Year(Now()) And c.closeDATE.Month = Month(Now()) And c.winFLAG = True Select c.tradeID
-            Dim cmt = From c In db.TradeDetails Where c.open = False And c.closeDATE.Year = Year(Now()) And c.closeDATE.Month = Month(Now()) Select c.tradeID
-
-            Dim cmWins = cmw.Count()
-            Dim CMtot = cmt.Count()
-
-            ViewData("curMonthNum") = CMtot
-            ViewData("curMonthWinPct") = (cmWins / CMtot.ToString())
+        'Dim model As New wavesViewModel With { _
+        '                                        .AllBlogs = db.GetXPosts(3) _
+        '                                      }
 
 
+        'Dim loopcntr As Integer = 1
+        'For Each item In model.AllBlogs
+        '    If loopcntr = 1 Then
+        '        ViewData("article1") = item.Name.ToString()
+        '        Dim testme As Integer = item.id
+        '    ElseIf loopcntr = 2 Then
+        '        ViewData("article2") = item.Name.ToString()
+        '    Else
+        '        ViewData("article3") = item.Name.ToString()
+        '    End If
+        '    loopcntr = loopcntr + 1
+        'Next
+        'loopcntr = 0
 
-        End Using
+        ' '' Section: Get Total Wins  
+        ' '' Get total number of winning trades and total closed trades for the current month to display in the top-bar of the landing page.
+
+        'Dim cmw = From c In db.TradeDetails Where c.open = False And c.closeDATE.Year = Year(Now()) And c.closeDATE.Month = Month(Now()) And c.winFLAG = True Select c.tradeID
+        'Dim cmt = From c In db.TradeDetails Where c.open = False And c.closeDATE.Year = Year(Now()) And c.closeDATE.Month = Month(Now()) Select c.tradeID
+
+        'Dim cmWins = cmw.Count()
+        'Dim CMtot = cmt.Count()
+
+        'ViewData("curMonthNum") = CMtot
+        'ViewData("curMonthWinPct") = (cmWins / CMtot.ToString())
+
+
+
+        'End Using
 
 
         Return View()

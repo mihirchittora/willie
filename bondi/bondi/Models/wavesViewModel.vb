@@ -1,6 +1,30 @@
 ﻿Public Class wavesViewModel
 
     ' This View Model is the list for all intervals entries viewing in the associated pages.
+    Private _orderlist As IEnumerable(Of OpenOrders)
+
+    Public Property OrderList() As IEnumerable(Of OpenOrders)
+        Get
+            Return _orderlist
+        End Get
+        Set(ByVal value As IEnumerable(Of OpenOrders))
+            _orderlist = value
+        End Set
+    End Property
+
+    ' This View Model is the list for all intervals entries viewing in the associated pages.
+    Private _positionlist As IEnumerable(Of OpenOrders)
+
+    Public Property PositionList() As IEnumerable(Of PositionMessage)
+        Get
+            Return _positionlist
+        End Get
+        Set(ByVal value As IEnumerable(Of PositionMessage))
+            _positionlist = value
+        End Set
+    End Property
+
+    ' This View Model is the list for all intervals entries viewing in the associated pages.
     Private _allindexes As IEnumerable(Of HarvestIndex)
 
     Public Property AllIndexes() As IEnumerable(Of HarvestIndex)
@@ -23,6 +47,18 @@
             _alllogs = value
         End Set
     End Property
+
+    ' This View Model is the list for all intervals entries viewing in the associated pages.
+    'Private _alllogsTest As List(Of 
+
+    'Public Property AllLogsTest() As IEnumerable(Of Lo)
+    '    Get
+    '        Return _alllogsTest
+    '    End Get
+    '    Set(ByVal value As IEnumerable(Of Lo))
+    '        _alllogsTest = value
+    '    End Set
+    'End Property
 
 
     ' This View Model is the list for all intervals entries viewing in the associated pages.
@@ -108,12 +144,135 @@
         End Set
     End Property
 
+    ' This View Model is the list for all intervals entries viewing in the associated pages.
+    Private _allhedges As IEnumerable(Of HarvestHedge)
+
+    Public Property Allhedges() As IEnumerable(Of HarvestHedge)
+        Get
+            Return _allhedges
+        End Get
+        Set(ByVal value As IEnumerable(Of HarvestHedge))
+            _allhedges = value
+        End Set
+    End Property
 
 
 
 
 
 
+    Public Class confirmedOrders
+        Private m_symbol As String
+        Private m_permId As Integer
+        Private m_lmtprice As Double
+        Private m_oaction As String
+        Private m_sectype As String
+        Private m_status As String
+        Private m_oid As Integer
+        Private m_conf As Boolean
+
+        Sub New(symbol As String, permid As Integer, lmtprice As Double, oaction As String, sectype As String, status As String, oid As Integer, conf As Boolean)
+            m_permId = permid
+            m_symbol = symbol
+            m_lmtprice = lmtprice
+            m_oaction = oaction
+            m_sectype = sectype
+            m_status = status
+            m_oid = oid
+            m_conf = conf
+        End Sub
+
+        Public Property Symbol() As String
+            Get
+                Return m_symbol
+            End Get
+            Set(value As String)
+                m_symbol = value
+            End Set
+        End Property
+
+        Public Property PermId() As Integer
+            Get
+                Return m_permId
+            End Get
+            Set(value As Integer)
+                m_permId = value
+            End Set
+        End Property
+
+        Public Property OAction() As String
+            Get
+                Return m_oaction
+            End Get
+            Set(value As String)
+                m_oaction = value
+            End Set
+        End Property
+
+        Public Property LmtPrice() As Double
+            Get
+                Return m_lmtprice
+            End Get
+            Set(value As Double)
+                m_lmtprice = value
+            End Set
+        End Property
+
+        Public Property secType() As String
+            Get
+                Return m_sectype
+            End Get
+            Set(value As String)
+                m_sectype = value
+            End Set
+        End Property
+
+        Public Property Status() As String
+            Get
+                Return m_status
+            End Get
+            Set(value As String)
+                m_status = value
+            End Set
+        End Property
+
+        Public Property OId() As Integer
+            Get
+                Return m_oid
+            End Get
+            Set(value As Integer)
+                m_oid = value
+            End Set
+        End Property
+
+        Public Property conf() As Boolean
+            Get
+                Return m_conf
+            End Get
+            Set(value As Boolean)
+                m_conf = value
+            End Set
+        End Property
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    End Class
 
     Public Class myobj
         Private m_id As String

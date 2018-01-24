@@ -93,6 +93,50 @@ Partial Class wavesDataContext
 
 
 
+
+
+    ' **********************************************************************************************************************************************************
+    ' Function:         Get stockorder
+    ' Written By:       Troy Belden
+    ' Date Written:     January, 17 2018
+    ' Last Updated:     January, 17 2018
+    ' Details:          This functon pulls the stock order from the table and returns it to the calling function based on the OrderId. 
+    '                     
+    '                   
+    ' **********************************************************************************************************************************************************
+
+
+
+    Public Function stockorderExists(ByVal orderID As String, ByVal action As String) As Boolean
+        Return Me.stockorders.Any(Function(u) u.PermID = orderID And u.Action = action)
+    End Function
+    Public Function getstockorder(ByVal permID As String, ByVal action As String) As stockorder
+        Return stockorders.Single(Function(p) p.PermID = permID And p.Action = action)
+    End Function
+
+    Public Function pullstockorder(ByVal oID As String, ByVal action As String) As stockorder
+        Return stockorders.Single(Function(p) p.OrderId = oID And p.Action = action)
+    End Function
+
+
+    Public Function stockposExists(ByVal symbol As String) As Boolean
+        Return Me.positions.Any(Function(u) u.symbol = symbol)
+    End Function
+
+    Public Function getposition(ByVal symbol As String) As position
+        Return positions.Single(Function(p) p.symbol = symbol)
+    End Function
+
+
+
+
+
+
+
+
+
+
+
     ' **********************************************************************************************************************************************************
     ' Function:         Get harvestposition
     ' Written By:       Troy Belden
@@ -103,8 +147,8 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function positionexists(ByVal harvestkey As String, ByVal price As String, ByVal userid As Guid, ByVal open As Boolean) As HarvestPosition
-        Return HarvestPositions.Single(Function(p) p.harvestkey = harvestkey And p.openprice = price And p.userid = userid And p.open = open)
+    Public Function getposition(ByVal harvestkey As String, ByVal price As String, ByVal open As Boolean) As HarvestPosition
+        Return HarvestPositions.Single(Function(p) p.harvestkey = harvestkey And p.openprice = price And p.open = open)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -117,17 +161,44 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function posExists(ByVal harvestkey As String, ByVal price As String, ByVal userid As Guid, ByVal open As Boolean) As Boolean
-        Return Me.HarvestPositions.Any(Function(u) u.harvestkey = harvestkey And u.openprice = price And u.userid = userid And u.open = open)
+    Public Function posExists(ByVal harvestkey As String, ByVal price As String, ByVal open As Boolean) As Boolean
+        Return Me.HarvestPositions.Any(Function(u) u.harvestkey = harvestkey And u.openprice = price And u.open = open)
     End Function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    'Public Function GroupedLogList() As List(Of HarvestLog)
+    '    Dim groupedlog = From p In Me.HarvestLogs Select Year(p.marketdate)
+    '    Return groupedlog.ToList()
+    'End Function
+
+
 
 
     Public Function logExists(ByVal harvestkey As String, ByVal marketdate As Date) As Boolean
-        Return Me.HarvestLogs.Any(Function(u) u.harvestkey = harvestkey And u.marketdate = Date.Parse(marketdate).ToUniversalTime())
+        Return Me.HarvestLogs.Any(Function(u) u.harvestkey = harvestkey And u.marketdate = Date.Parse(marketdate).ToUniversalTime().ToShortDateString)
     End Function
 
     Public Function getlog(ByVal harvestkey As String, ByVal marketdate As Date) As HarvestLog
-        Return HarvestLogs.Single(Function(p) p.harvestkey = harvestkey And p.marketdate = Date.Parse(marketdate).ToUniversalTime())
+        Return HarvestLogs.Single(Function(p) p.harvestkey = harvestkey And p.marketdate = marketdate.ToShortDateString)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -171,8 +242,22 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function markExists(ByVal symbol As String, ByVal uID As Guid) As Boolean
-        Return Me.HarvestMarks.Any(Function(u) u.symbol = symbol And u.userid = uID)
+    Public Function CheckMark(ByVal harvestkey As String) As Boolean
+        Return Me.HarvestMarks.Any(Function(u) u.harvestkey = harvestkey)
+    End Function
+
+    ' **********************************************************************************************************************************************************
+    ' Function:         Check if Mark Exists
+    ' Written By:       Troy Belden
+    ' Date Written:     December, 18 2016
+    ' Last Updated:     December, 18 2016
+    ' Details:          This utility function checks the triggers table to determine if a mark exists for the product. 
+    '                     
+    '                   
+    ' **********************************************************************************************************************************************************
+
+    Public Function markExists(ByVal symbol As String, ByVal harvestkey As String) As Boolean
+        Return Me.HarvestMarks.Any(Function(u) u.symbol = symbol And u.harvestkey = harvestkey)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -185,8 +270,25 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function getmark(ByVal symbol As String, ByVal mark As Double, ByVal uID As Guid) As HarvestMark
-        Return HarvestMarks.Single(Function(p) p.symbol = symbol And p.userid = uID And p.mark = mark)
+    Public Function getmark(ByVal harvestkey As String) As HarvestMark
+        Return HarvestMarks.Single(Function(p) p.harvestkey = harvestkey)
+    End Function
+
+
+
+
+    ' **********************************************************************************************************************************************************
+    ' Function:         Get An Mark
+    ' Written By:       Troy Belden
+    ' Date Written:     November, 20 2016
+    ' Last Updated:     November, 20 2016
+    ' Details:          This functon pulls the entered post selected and display it from the database. 
+    '                     
+    '                   
+    ' **********************************************************************************************************************************************************
+
+    Public Function getopenmark(ByVal symbol As String, ByVal harvestkey As String) As HarvestMark
+        Return HarvestMarks.Single(Function(p) p.symbol = symbol And p.harvestkey = harvestkey And p.open = True)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -199,8 +301,8 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function getopenmark(ByVal symbol As String, ByVal uID As Guid, ByVal harvestkey As String) As HarvestMark
-        Return HarvestMarks.Single(Function(p) p.symbol = symbol And p.userid = uID And p.harvestkey = harvestkey And p.open = True)
+    Public Function pullmark(ByVal harvestkey As String) As HarvestMark
+        Return HarvestMarks.Single(Function(p) p.harvestkey = harvestkey)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -213,8 +315,22 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function hedgeexists(ByVal harvestkey As String, ByVal stockatopen As Double, ByVal uID As Guid, ByVal open As Boolean) As Boolean
-        Return Me.HarvestHedges.Any(Function(h) h.harvestkey = harvestkey And h.userid = uID And h.stockatopen = stockatopen And h.open = open)
+    Public Function hedgeexists(ByVal harvestkey As String, ByVal price As Double, ByVal open As Boolean) As Boolean
+        Return Me.HarvestHedges.Any(Function(h) h.harvestkey = harvestkey And h.stockatopen = price And h.open = True)
+    End Function
+
+    ' **********************************************************************************************************************************************************
+    ' Function:         Check if Hedge Exists
+    ' Written By:       Troy Belden
+    ' Date Written:     April, 18 2017
+    ' Last Updated:     April, 18 2017
+    ' Details:          This utility function is triggered when a position is sold to determine if a hedge position is needed. The hedge is applied when a position 
+    '                   is sold to get a discount in the amount of the width on the hedge option.  
+    '                   
+    ' **********************************************************************************************************************************************************
+
+    Public Function chedgeexists(ByVal harvestkey As String, ByVal pricetest As Double, ByVal open As Boolean) As Boolean
+        Return Me.HarvestHedges.Any(Function(h) h.harvestkey = harvestkey And h.targetexit = pricetest And h.open = open)
     End Function
 
     ' **********************************************************************************************************************************************************
@@ -227,8 +343,24 @@ Partial Class wavesDataContext
     '                   
     ' **********************************************************************************************************************************************************
 
-    Public Function gethedge(ByVal harvestkey As String, ByVal stockatopen As Double, ByVal open As Boolean) As HarvestHedge
-        Return HarvestHedges.Single(Function(h) h.harvestkey = harvestkey And h.stockatopen = stockatopen And h.open = open)
+    Public Function gethedge(ByVal harvestkey As String, ByVal pricetest As Double, ByVal open As Boolean) As HarvestHedge
+        Return HarvestHedges.Single(Function(h) h.harvestkey = harvestkey And h.stockatopen = pricetest And h.open = open)
+    End Function
+
+    ' **********************************************************************************************************************************************************
+    ' Function:         Get the hedge
+    ' Written By:       Troy Belden
+    ' Date Written:     November, 20 2016
+    ' Last Updated:     November, 20 2016
+    ' Details:          This functon pulls the entered post selected and display it from the database. 
+    '                     
+    '                   
+    ' **********************************************************************************************************************************************************
+
+    Public Function gethedgelist(ByVal harvestkey As String, ByVal markcheck As Double, ByVal open As Boolean) As List(Of HarvestHedge)
+        'Return HarvestHedges.Single(Function(h) h.harvestkey = harvestkey And h.stockatopen = stockatopen And h.open = open)
+        Dim allhedges = From hedge In Me.HarvestHedges Where hedge.harvestkey = harvestkey And hedge.open = open And hedge.stockatopen > markcheck Select hedge Order By hedge.stockatopen Ascending
+        Return allhedges.ToList()
     End Function
 
 End Class

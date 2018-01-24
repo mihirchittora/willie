@@ -18,6 +18,7 @@
         
         <link rel="stylesheet" href="../../content/member/css/bootstrap.min.css">
         <link rel="stylesheet" href="../../content/member/css/iriy-admin.min.css">
+        
         <link rel="stylesheet" href="../../content/member/demo/css/demo.css">
         <link rel="stylesheet" href="../../content/member/assets/font-awesome/css/font-awesome.css">
 
@@ -53,13 +54,15 @@
                 <ul class="nav navbar-nav navbar-nav-expanded pull-right margin-md-right">                                                           
                     <li class="dropdown">
                         <a data-toggle="dropdown" class="dropdown-toggle navbar-user" href="javascript:;">
-                            <img class="img-circle" src="../../content/member/demo/images/profile.jpg">
-                            <span class="hidden-xs"> User Name</span>
+                            
+                            <img class="img-circle" src="../../img/profile.jpg">
+                            <span class="hidden-xs"> boss</span>
+                            
                             <b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu pull-right-xs">
                             <li class="arrow"></li>
-                            <li><a href="pages-profile.html">Profile</a></li>
+                            <li><a href='<%: Url.Action("profile", "Member")%>'>Profile</a></li>
                             <li><a href="javascript:;"><span class="badge badge-danger pull-right">2</span> Inbox</a></li>
                             <li><a href="javascript:;">Messages</a></li>
                             <li><a href="javascript:;">Settings</a></li>

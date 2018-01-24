@@ -55,11 +55,11 @@ Partial Public Class wavesDataContext
     End Sub
   Partial Private Sub DeleteHarvestInterval(instance As HarvestInterval)
     End Sub
-  Partial Private Sub InsertHarvestIndex(instance As HarvestIndex)
+  Partial Private Sub InsertHarvestMark(instance As HarvestMark)
     End Sub
-  Partial Private Sub UpdateHarvestIndex(instance As HarvestIndex)
+  Partial Private Sub UpdateHarvestMark(instance As HarvestMark)
     End Sub
-  Partial Private Sub DeleteHarvestIndex(instance As HarvestIndex)
+  Partial Private Sub DeleteHarvestMark(instance As HarvestMark)
     End Sub
   Partial Private Sub InsertHarvestPosition(instance As HarvestPosition)
     End Sub
@@ -73,17 +73,29 @@ Partial Public Class wavesDataContext
     End Sub
   Partial Private Sub DeleteHarvestHedge(instance As HarvestHedge)
     End Sub
-  Partial Private Sub InsertHarvestMark(instance As HarvestMark)
+  Partial Private Sub InsertHarvestIndex(instance As HarvestIndex)
     End Sub
-  Partial Private Sub UpdateHarvestMark(instance As HarvestMark)
+  Partial Private Sub UpdateHarvestIndex(instance As HarvestIndex)
     End Sub
-  Partial Private Sub DeleteHarvestMark(instance As HarvestMark)
+  Partial Private Sub DeleteHarvestIndex(instance As HarvestIndex)
     End Sub
   Partial Private Sub InsertHarvestLog(instance As HarvestLog)
     End Sub
   Partial Private Sub UpdateHarvestLog(instance As HarvestLog)
     End Sub
   Partial Private Sub DeleteHarvestLog(instance As HarvestLog)
+    End Sub
+  Partial Private Sub Insertstockorder(instance As stockorder)
+    End Sub
+  Partial Private Sub Updatestockorder(instance As stockorder)
+    End Sub
+  Partial Private Sub Deletestockorder(instance As stockorder)
+    End Sub
+  Partial Private Sub Insertposition(instance As position)
+    End Sub
+  Partial Private Sub Updateposition(instance As position)
+    End Sub
+  Partial Private Sub Deleteposition(instance As position)
     End Sub
   #End Region
 	
@@ -136,9 +148,9 @@ Partial Public Class wavesDataContext
 		End Get
 	End Property
 	
-	Public ReadOnly Property HarvestIndexes() As System.Data.Linq.Table(Of HarvestIndex)
+	Public ReadOnly Property HarvestMarks() As System.Data.Linq.Table(Of HarvestMark)
 		Get
-			Return Me.GetTable(Of HarvestIndex)
+			Return Me.GetTable(Of HarvestMark)
 		End Get
 	End Property
 	
@@ -154,15 +166,27 @@ Partial Public Class wavesDataContext
 		End Get
 	End Property
 	
-	Public ReadOnly Property HarvestMarks() As System.Data.Linq.Table(Of HarvestMark)
+	Public ReadOnly Property HarvestIndexes() As System.Data.Linq.Table(Of HarvestIndex)
 		Get
-			Return Me.GetTable(Of HarvestMark)
+			Return Me.GetTable(Of HarvestIndex)
 		End Get
 	End Property
 	
 	Public ReadOnly Property HarvestLogs() As System.Data.Linq.Table(Of HarvestLog)
 		Get
 			Return Me.GetTable(Of HarvestLog)
+		End Get
+	End Property
+	
+	Public ReadOnly Property stockorders() As System.Data.Linq.Table(Of stockorder)
+		Get
+			Return Me.GetTable(Of stockorder)
+		End Get
+	End Property
+	
+	Public ReadOnly Property positions() As System.Data.Linq.Table(Of position)
+		Get
+			Return Me.GetTable(Of position)
 		End Get
 	End Property
 End Class
@@ -1386,1006 +1410,6 @@ Partial Public Class HarvestInterval
 	End Sub
 End Class
 
-<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestIndex")>  _
-Partial Public Class HarvestIndex
-	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
-	
-	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
-	
-	Private _id As Integer
-	
-	Private _harvestKey As String
-	
-	Private _userID As System.Nullable(Of System.Guid)
-	
-	Private _name As String
-	
-	Private _product As String
-	
-	Private _opentrigger As System.Nullable(Of Decimal)
-	
-	Private _width As System.Nullable(Of Decimal)
-	
-	Private _timestamp As System.Nullable(Of Date)
-	
-	Private _active As System.Nullable(Of Boolean)
-	
-    #Region "Extensibility Method Definitions"
-    Partial Private Sub OnLoaded()
-    End Sub
-    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
-    End Sub
-    Partial Private Sub OnCreated()
-    End Sub
-    Partial Private Sub OnidChanging(value As Integer)
-    End Sub
-    Partial Private Sub OnidChanged()
-    End Sub
-    Partial Private Sub OnharvestKeyChanging(value As String)
-    End Sub
-    Partial Private Sub OnharvestKeyChanged()
-    End Sub
-    Partial Private Sub OnuserIDChanging(value As System.Nullable(Of System.Guid))
-    End Sub
-    Partial Private Sub OnuserIDChanged()
-    End Sub
-    Partial Private Sub OnnameChanging(value As String)
-    End Sub
-    Partial Private Sub OnnameChanged()
-    End Sub
-    Partial Private Sub OnproductChanging(value As String)
-    End Sub
-    Partial Private Sub OnproductChanged()
-    End Sub
-    Partial Private Sub OnopentriggerChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnopentriggerChanged()
-    End Sub
-    Partial Private Sub OnwidthChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnwidthChanged()
-    End Sub
-    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OntimestampChanged()
-    End Sub
-    Partial Private Sub OnactiveChanging(value As System.Nullable(Of Boolean))
-    End Sub
-    Partial Private Sub OnactiveChanged()
-    End Sub
-    #End Region
-	
-	Public Sub New()
-		MyBase.New
-		OnCreated
-	End Sub
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
-	Public Property id() As Integer
-		Get
-			Return Me._id
-		End Get
-		Set
-			If ((Me._id = value)  _
-						= false) Then
-				Me.OnidChanging(value)
-				Me.SendPropertyChanging
-				Me._id = value
-				Me.SendPropertyChanged("id")
-				Me.OnidChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestKey", DbType:="NVarChar(12)")>  _
-	Public Property harvestKey() As String
-		Get
-			Return Me._harvestKey
-		End Get
-		Set
-			If (String.Equals(Me._harvestKey, value) = false) Then
-				Me.OnharvestKeyChanging(value)
-				Me.SendPropertyChanging
-				Me._harvestKey = value
-				Me.SendPropertyChanged("harvestKey")
-				Me.OnharvestKeyChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_userID", DbType:="UniqueIdentifier")>  _
-	Public Property userID() As System.Nullable(Of System.Guid)
-		Get
-			Return Me._userID
-		End Get
-		Set
-			If (Me._userID.Equals(value) = false) Then
-				Me.OnuserIDChanging(value)
-				Me.SendPropertyChanging
-				Me._userID = value
-				Me.SendPropertyChanged("userID")
-				Me.OnuserIDChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_name", DbType:="NVarChar(140)")>  _
-	Public Property name() As String
-		Get
-			Return Me._name
-		End Get
-		Set
-			If (String.Equals(Me._name, value) = false) Then
-				Me.OnnameChanging(value)
-				Me.SendPropertyChanging
-				Me._name = value
-				Me.SendPropertyChanged("name")
-				Me.OnnameChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_product", DbType:="NVarChar(4)")>  _
-	Public Property product() As String
-		Get
-			Return Me._product
-		End Get
-		Set
-			If (String.Equals(Me._product, value) = false) Then
-				Me.OnproductChanging(value)
-				Me.SendPropertyChanging
-				Me._product = value
-				Me.SendPropertyChanged("product")
-				Me.OnproductChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opentrigger", DbType:="Money")>  _
-	Public Property opentrigger() As System.Nullable(Of Decimal)
-		Get
-			Return Me._opentrigger
-		End Get
-		Set
-			If (Me._opentrigger.Equals(value) = false) Then
-				Me.OnopentriggerChanging(value)
-				Me.SendPropertyChanging
-				Me._opentrigger = value
-				Me.SendPropertyChanged("opentrigger")
-				Me.OnopentriggerChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_width", DbType:="Money")>  _
-	Public Property width() As System.Nullable(Of Decimal)
-		Get
-			Return Me._width
-		End Get
-		Set
-			If (Me._width.Equals(value) = false) Then
-				Me.OnwidthChanging(value)
-				Me.SendPropertyChanging
-				Me._width = value
-				Me.SendPropertyChanged("width")
-				Me.OnwidthChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
-	Public Property timestamp() As System.Nullable(Of Date)
-		Get
-			Return Me._timestamp
-		End Get
-		Set
-			If (Me._timestamp.Equals(value) = false) Then
-				Me.OntimestampChanging(value)
-				Me.SendPropertyChanging
-				Me._timestamp = value
-				Me.SendPropertyChanged("timestamp")
-				Me.OntimestampChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_active", DbType:="Bit")>  _
-	Public Property active() As System.Nullable(Of Boolean)
-		Get
-			Return Me._active
-		End Get
-		Set
-			If (Me._active.Equals(value) = false) Then
-				Me.OnactiveChanging(value)
-				Me.SendPropertyChanging
-				Me._active = value
-				Me.SendPropertyChanged("active")
-				Me.OnactiveChanged
-			End If
-		End Set
-	End Property
-	
-	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
-	
-	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
-	
-	Protected Overridable Sub SendPropertyChanging()
-		If ((Me.PropertyChangingEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
-		End If
-	End Sub
-	
-	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
-		If ((Me.PropertyChangedEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-		End If
-	End Sub
-End Class
-
-<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestPositions")>  _
-Partial Public Class HarvestPosition
-	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
-	
-	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
-	
-	Private _id As Integer
-	
-	Private _symbol As String
-	
-	Private _shares As System.Nullable(Of Integer)
-	
-	Private _opendate As System.Nullable(Of Date)
-	
-	Private _openprice As System.Nullable(Of Decimal)
-	
-	Private _hedge As System.Nullable(Of Boolean)
-	
-	Private _strike As System.Nullable(Of Decimal)
-	
-	Private _closedate As System.Nullable(Of Date)
-	
-	Private _closeprice As System.Nullable(Of Decimal)
-	
-	Private _userid As System.Nullable(Of System.Guid)
-	
-	Private _timestamp As System.Nullable(Of Date)
-	
-	Private _open As System.Nullable(Of Boolean)
-	
-	Private _openflag As String
-	
-	Private _closeflag As String
-	
-	Private _harvestkey As String
-	
-    #Region "Extensibility Method Definitions"
-    Partial Private Sub OnLoaded()
-    End Sub
-    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
-    End Sub
-    Partial Private Sub OnCreated()
-    End Sub
-    Partial Private Sub OnidChanging(value As Integer)
-    End Sub
-    Partial Private Sub OnidChanged()
-    End Sub
-    Partial Private Sub OnsymbolChanging(value As String)
-    End Sub
-    Partial Private Sub OnsymbolChanged()
-    End Sub
-    Partial Private Sub OnsharesChanging(value As System.Nullable(Of Integer))
-    End Sub
-    Partial Private Sub OnsharesChanged()
-    End Sub
-    Partial Private Sub OnopendateChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OnopendateChanged()
-    End Sub
-    Partial Private Sub OnopenpriceChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnopenpriceChanged()
-    End Sub
-    Partial Private Sub OnhedgeChanging(value As System.Nullable(Of Boolean))
-    End Sub
-    Partial Private Sub OnhedgeChanged()
-    End Sub
-    Partial Private Sub OnstrikeChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnstrikeChanged()
-    End Sub
-    Partial Private Sub OnclosedateChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OnclosedateChanged()
-    End Sub
-    Partial Private Sub OnclosepriceChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnclosepriceChanged()
-    End Sub
-    Partial Private Sub OnuseridChanging(value As System.Nullable(Of System.Guid))
-    End Sub
-    Partial Private Sub OnuseridChanged()
-    End Sub
-    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OntimestampChanged()
-    End Sub
-    Partial Private Sub OnopenChanging(value As System.Nullable(Of Boolean))
-    End Sub
-    Partial Private Sub OnopenChanged()
-    End Sub
-    Partial Private Sub OnopenflagChanging(value As String)
-    End Sub
-    Partial Private Sub OnopenflagChanged()
-    End Sub
-    Partial Private Sub OncloseflagChanging(value As String)
-    End Sub
-    Partial Private Sub OncloseflagChanged()
-    End Sub
-    Partial Private Sub OnharvestkeyChanging(value As String)
-    End Sub
-    Partial Private Sub OnharvestkeyChanged()
-    End Sub
-    #End Region
-	
-	Public Sub New()
-		MyBase.New
-		OnCreated
-	End Sub
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
-	Public Property id() As Integer
-		Get
-			Return Me._id
-		End Get
-		Set
-			If ((Me._id = value)  _
-						= false) Then
-				Me.OnidChanging(value)
-				Me.SendPropertyChanging
-				Me._id = value
-				Me.SendPropertyChanged("id")
-				Me.OnidChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_symbol", DbType:="NVarChar(4)")>  _
-	Public Property symbol() As String
-		Get
-			Return Me._symbol
-		End Get
-		Set
-			If (String.Equals(Me._symbol, value) = false) Then
-				Me.OnsymbolChanging(value)
-				Me.SendPropertyChanging
-				Me._symbol = value
-				Me.SendPropertyChanged("symbol")
-				Me.OnsymbolChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_shares", DbType:="Int")>  _
-	Public Property shares() As System.Nullable(Of Integer)
-		Get
-			Return Me._shares
-		End Get
-		Set
-			If (Me._shares.Equals(value) = false) Then
-				Me.OnsharesChanging(value)
-				Me.SendPropertyChanging
-				Me._shares = value
-				Me.SendPropertyChanged("shares")
-				Me.OnsharesChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opendate", DbType:="DateTime")>  _
-	Public Property opendate() As System.Nullable(Of Date)
-		Get
-			Return Me._opendate
-		End Get
-		Set
-			If (Me._opendate.Equals(value) = false) Then
-				Me.OnopendateChanging(value)
-				Me.SendPropertyChanging
-				Me._opendate = value
-				Me.SendPropertyChanged("opendate")
-				Me.OnopendateChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openprice", DbType:="Money")>  _
-	Public Property openprice() As System.Nullable(Of Decimal)
-		Get
-			Return Me._openprice
-		End Get
-		Set
-			If (Me._openprice.Equals(value) = false) Then
-				Me.OnopenpriceChanging(value)
-				Me.SendPropertyChanging
-				Me._openprice = value
-				Me.SendPropertyChanged("openprice")
-				Me.OnopenpriceChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedge", DbType:="Bit")>  _
-	Public Property hedge() As System.Nullable(Of Boolean)
-		Get
-			Return Me._hedge
-		End Get
-		Set
-			If (Me._hedge.Equals(value) = false) Then
-				Me.OnhedgeChanging(value)
-				Me.SendPropertyChanging
-				Me._hedge = value
-				Me.SendPropertyChanged("hedge")
-				Me.OnhedgeChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_strike", DbType:="Money")>  _
-	Public Property strike() As System.Nullable(Of Decimal)
-		Get
-			Return Me._strike
-		End Get
-		Set
-			If (Me._strike.Equals(value) = false) Then
-				Me.OnstrikeChanging(value)
-				Me.SendPropertyChanging
-				Me._strike = value
-				Me.SendPropertyChanged("strike")
-				Me.OnstrikeChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closedate", DbType:="DateTime")>  _
-	Public Property closedate() As System.Nullable(Of Date)
-		Get
-			Return Me._closedate
-		End Get
-		Set
-			If (Me._closedate.Equals(value) = false) Then
-				Me.OnclosedateChanging(value)
-				Me.SendPropertyChanging
-				Me._closedate = value
-				Me.SendPropertyChanged("closedate")
-				Me.OnclosedateChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeprice", DbType:="Money")>  _
-	Public Property closeprice() As System.Nullable(Of Decimal)
-		Get
-			Return Me._closeprice
-		End Get
-		Set
-			If (Me._closeprice.Equals(value) = false) Then
-				Me.OnclosepriceChanging(value)
-				Me.SendPropertyChanging
-				Me._closeprice = value
-				Me.SendPropertyChanged("closeprice")
-				Me.OnclosepriceChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_userid", DbType:="UniqueIdentifier")>  _
-	Public Property userid() As System.Nullable(Of System.Guid)
-		Get
-			Return Me._userid
-		End Get
-		Set
-			If (Me._userid.Equals(value) = false) Then
-				Me.OnuseridChanging(value)
-				Me.SendPropertyChanging
-				Me._userid = value
-				Me.SendPropertyChanged("userid")
-				Me.OnuseridChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
-	Public Property timestamp() As System.Nullable(Of Date)
-		Get
-			Return Me._timestamp
-		End Get
-		Set
-			If (Me._timestamp.Equals(value) = false) Then
-				Me.OntimestampChanging(value)
-				Me.SendPropertyChanging
-				Me._timestamp = value
-				Me.SendPropertyChanged("timestamp")
-				Me.OntimestampChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Name:="[open]", Storage:="_open", DbType:="Bit")>  _
-	Public Property open() As System.Nullable(Of Boolean)
-		Get
-			Return Me._open
-		End Get
-		Set
-			If (Me._open.Equals(value) = false) Then
-				Me.OnopenChanging(value)
-				Me.SendPropertyChanging
-				Me._open = value
-				Me.SendPropertyChanged("open")
-				Me.OnopenChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openflag", DbType:="NVarChar(1)")>  _
-	Public Property openflag() As String
-		Get
-			Return Me._openflag
-		End Get
-		Set
-			If (String.Equals(Me._openflag, value) = false) Then
-				Me.OnopenflagChanging(value)
-				Me.SendPropertyChanging
-				Me._openflag = value
-				Me.SendPropertyChanged("openflag")
-				Me.OnopenflagChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeflag", DbType:="NVarChar(1)")>  _
-	Public Property closeflag() As String
-		Get
-			Return Me._closeflag
-		End Get
-		Set
-			If (String.Equals(Me._closeflag, value) = false) Then
-				Me.OncloseflagChanging(value)
-				Me.SendPropertyChanging
-				Me._closeflag = value
-				Me.SendPropertyChanged("closeflag")
-				Me.OncloseflagChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestkey", DbType:="NVarChar(12)")>  _
-	Public Property harvestkey() As String
-		Get
-			Return Me._harvestkey
-		End Get
-		Set
-			If (String.Equals(Me._harvestkey, value) = false) Then
-				Me.OnharvestkeyChanging(value)
-				Me.SendPropertyChanging
-				Me._harvestkey = value
-				Me.SendPropertyChanged("harvestkey")
-				Me.OnharvestkeyChanged
-			End If
-		End Set
-	End Property
-	
-	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
-	
-	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
-	
-	Protected Overridable Sub SendPropertyChanging()
-		If ((Me.PropertyChangingEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
-		End If
-	End Sub
-	
-	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
-		If ((Me.PropertyChangedEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-		End If
-	End Sub
-End Class
-
-<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestHedges")>  _
-Partial Public Class HarvestHedge
-	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
-	
-	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
-	
-	Private _id As Integer
-	
-	Private _symbol As String
-	
-	Private _type As String
-	
-	Private _lots As System.Nullable(Of Integer)
-	
-	Private _strike As System.Nullable(Of Decimal)
-	
-	Private _exp As System.Nullable(Of Date)
-	
-	Private _stockatopen As System.Nullable(Of Decimal)
-	
-	Private _opendate As System.Nullable(Of Date)
-	
-	Private _openprice As System.Nullable(Of Decimal)
-	
-	Private _stockatclose As System.Nullable(Of Decimal)
-	
-	Private _closedate As System.Nullable(Of Date)
-	
-	Private _closeprice As System.Nullable(Of Decimal)
-	
-	Private _open As System.Nullable(Of Boolean)
-	
-	Private _timestamp As System.Nullable(Of Date)
-	
-	Private _userid As System.Nullable(Of System.Guid)
-	
-	Private _harvestkey As String
-	
-    #Region "Extensibility Method Definitions"
-    Partial Private Sub OnLoaded()
-    End Sub
-    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
-    End Sub
-    Partial Private Sub OnCreated()
-    End Sub
-    Partial Private Sub OnidChanging(value As Integer)
-    End Sub
-    Partial Private Sub OnidChanged()
-    End Sub
-    Partial Private Sub OnsymbolChanging(value As String)
-    End Sub
-    Partial Private Sub OnsymbolChanged()
-    End Sub
-    Partial Private Sub OntypeChanging(value As String)
-    End Sub
-    Partial Private Sub OntypeChanged()
-    End Sub
-    Partial Private Sub OnlotsChanging(value As System.Nullable(Of Integer))
-    End Sub
-    Partial Private Sub OnlotsChanged()
-    End Sub
-    Partial Private Sub OnstrikeChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnstrikeChanged()
-    End Sub
-    Partial Private Sub OnexpChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OnexpChanged()
-    End Sub
-    Partial Private Sub OnstockatopenChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnstockatopenChanged()
-    End Sub
-    Partial Private Sub OnopendateChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OnopendateChanged()
-    End Sub
-    Partial Private Sub OnopenpriceChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnopenpriceChanged()
-    End Sub
-    Partial Private Sub OnstockatcloseChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnstockatcloseChanged()
-    End Sub
-    Partial Private Sub OnclosedateChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OnclosedateChanged()
-    End Sub
-    Partial Private Sub OnclosepriceChanging(value As System.Nullable(Of Decimal))
-    End Sub
-    Partial Private Sub OnclosepriceChanged()
-    End Sub
-    Partial Private Sub OnopenChanging(value As System.Nullable(Of Boolean))
-    End Sub
-    Partial Private Sub OnopenChanged()
-    End Sub
-    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
-    End Sub
-    Partial Private Sub OntimestampChanged()
-    End Sub
-    Partial Private Sub OnuseridChanging(value As System.Nullable(Of System.Guid))
-    End Sub
-    Partial Private Sub OnuseridChanged()
-    End Sub
-    Partial Private Sub OnharvestkeyChanging(value As String)
-    End Sub
-    Partial Private Sub OnharvestkeyChanged()
-    End Sub
-    #End Region
-	
-	Public Sub New()
-		MyBase.New
-		OnCreated
-	End Sub
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
-	Public Property id() As Integer
-		Get
-			Return Me._id
-		End Get
-		Set
-			If ((Me._id = value)  _
-						= false) Then
-				Me.OnidChanging(value)
-				Me.SendPropertyChanging
-				Me._id = value
-				Me.SendPropertyChanged("id")
-				Me.OnidChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_symbol", DbType:="NVarChar(4)")>  _
-	Public Property symbol() As String
-		Get
-			Return Me._symbol
-		End Get
-		Set
-			If (String.Equals(Me._symbol, value) = false) Then
-				Me.OnsymbolChanging(value)
-				Me.SendPropertyChanging
-				Me._symbol = value
-				Me.SendPropertyChanged("symbol")
-				Me.OnsymbolChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_type", DbType:="NVarChar(1)")>  _
-	Public Property type() As String
-		Get
-			Return Me._type
-		End Get
-		Set
-			If (String.Equals(Me._type, value) = false) Then
-				Me.OntypeChanging(value)
-				Me.SendPropertyChanging
-				Me._type = value
-				Me.SendPropertyChanged("type")
-				Me.OntypeChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_lots", DbType:="Int")>  _
-	Public Property lots() As System.Nullable(Of Integer)
-		Get
-			Return Me._lots
-		End Get
-		Set
-			If (Me._lots.Equals(value) = false) Then
-				Me.OnlotsChanging(value)
-				Me.SendPropertyChanging
-				Me._lots = value
-				Me.SendPropertyChanged("lots")
-				Me.OnlotsChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_strike", DbType:="Money")>  _
-	Public Property strike() As System.Nullable(Of Decimal)
-		Get
-			Return Me._strike
-		End Get
-		Set
-			If (Me._strike.Equals(value) = false) Then
-				Me.OnstrikeChanging(value)
-				Me.SendPropertyChanging
-				Me._strike = value
-				Me.SendPropertyChanged("strike")
-				Me.OnstrikeChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_exp", DbType:="Date")>  _
-	Public Property exp() As System.Nullable(Of Date)
-		Get
-			Return Me._exp
-		End Get
-		Set
-			If (Me._exp.Equals(value) = false) Then
-				Me.OnexpChanging(value)
-				Me.SendPropertyChanging
-				Me._exp = value
-				Me.SendPropertyChanged("exp")
-				Me.OnexpChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_stockatopen", DbType:="Money")>  _
-	Public Property stockatopen() As System.Nullable(Of Decimal)
-		Get
-			Return Me._stockatopen
-		End Get
-		Set
-			If (Me._stockatopen.Equals(value) = false) Then
-				Me.OnstockatopenChanging(value)
-				Me.SendPropertyChanging
-				Me._stockatopen = value
-				Me.SendPropertyChanged("stockatopen")
-				Me.OnstockatopenChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opendate", DbType:="DateTime")>  _
-	Public Property opendate() As System.Nullable(Of Date)
-		Get
-			Return Me._opendate
-		End Get
-		Set
-			If (Me._opendate.Equals(value) = false) Then
-				Me.OnopendateChanging(value)
-				Me.SendPropertyChanging
-				Me._opendate = value
-				Me.SendPropertyChanged("opendate")
-				Me.OnopendateChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openprice", DbType:="Money")>  _
-	Public Property openprice() As System.Nullable(Of Decimal)
-		Get
-			Return Me._openprice
-		End Get
-		Set
-			If (Me._openprice.Equals(value) = false) Then
-				Me.OnopenpriceChanging(value)
-				Me.SendPropertyChanging
-				Me._openprice = value
-				Me.SendPropertyChanged("openprice")
-				Me.OnopenpriceChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_stockatclose", DbType:="Money")>  _
-	Public Property stockatclose() As System.Nullable(Of Decimal)
-		Get
-			Return Me._stockatclose
-		End Get
-		Set
-			If (Me._stockatclose.Equals(value) = false) Then
-				Me.OnstockatcloseChanging(value)
-				Me.SendPropertyChanging
-				Me._stockatclose = value
-				Me.SendPropertyChanged("stockatclose")
-				Me.OnstockatcloseChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closedate", DbType:="DateTime")>  _
-	Public Property closedate() As System.Nullable(Of Date)
-		Get
-			Return Me._closedate
-		End Get
-		Set
-			If (Me._closedate.Equals(value) = false) Then
-				Me.OnclosedateChanging(value)
-				Me.SendPropertyChanging
-				Me._closedate = value
-				Me.SendPropertyChanged("closedate")
-				Me.OnclosedateChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeprice", DbType:="Money")>  _
-	Public Property closeprice() As System.Nullable(Of Decimal)
-		Get
-			Return Me._closeprice
-		End Get
-		Set
-			If (Me._closeprice.Equals(value) = false) Then
-				Me.OnclosepriceChanging(value)
-				Me.SendPropertyChanging
-				Me._closeprice = value
-				Me.SendPropertyChanged("closeprice")
-				Me.OnclosepriceChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Name:="[open]", Storage:="_open", DbType:="Bit")>  _
-	Public Property open() As System.Nullable(Of Boolean)
-		Get
-			Return Me._open
-		End Get
-		Set
-			If (Me._open.Equals(value) = false) Then
-				Me.OnopenChanging(value)
-				Me.SendPropertyChanging
-				Me._open = value
-				Me.SendPropertyChanged("open")
-				Me.OnopenChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
-	Public Property timestamp() As System.Nullable(Of Date)
-		Get
-			Return Me._timestamp
-		End Get
-		Set
-			If (Me._timestamp.Equals(value) = false) Then
-				Me.OntimestampChanging(value)
-				Me.SendPropertyChanging
-				Me._timestamp = value
-				Me.SendPropertyChanged("timestamp")
-				Me.OntimestampChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_userid", DbType:="UniqueIdentifier")>  _
-	Public Property userid() As System.Nullable(Of System.Guid)
-		Get
-			Return Me._userid
-		End Get
-		Set
-			If (Me._userid.Equals(value) = false) Then
-				Me.OnuseridChanging(value)
-				Me.SendPropertyChanging
-				Me._userid = value
-				Me.SendPropertyChanged("userid")
-				Me.OnuseridChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestkey", DbType:="NVarChar(12)")>  _
-	Public Property harvestkey() As String
-		Get
-			Return Me._harvestkey
-		End Get
-		Set
-			If (String.Equals(Me._harvestkey, value) = false) Then
-				Me.OnharvestkeyChanging(value)
-				Me.SendPropertyChanging
-				Me._harvestkey = value
-				Me.SendPropertyChanged("harvestkey")
-				Me.OnharvestkeyChanged
-			End If
-		End Set
-	End Property
-	
-	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
-	
-	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
-	
-	Protected Overridable Sub SendPropertyChanging()
-		If ((Me.PropertyChangingEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
-		End If
-	End Sub
-	
-	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
-		If ((Me.PropertyChangedEvent Is Nothing)  _
-					= false) Then
-			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
-		End If
-	End Sub
-End Class
-
 <Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestMarks")>  _
 Partial Public Class HarvestMark
 	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
@@ -2624,6 +1648,1292 @@ Partial Public Class HarvestMark
 	End Sub
 End Class
 
+<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestPositions")>  _
+Partial Public Class HarvestPosition
+	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
+	
+	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
+	
+	Private _id As Integer
+	
+	Private _symbol As String
+	
+	Private _shares As System.Nullable(Of Integer)
+	
+	Private _opendate As System.Nullable(Of Date)
+	
+	Private _openprice As System.Nullable(Of Decimal)
+	
+	Private _hedge As System.Nullable(Of Boolean)
+	
+	Private _strike As System.Nullable(Of Decimal)
+	
+	Private _closedate As System.Nullable(Of Date)
+	
+	Private _closeprice As System.Nullable(Of Decimal)
+	
+	Private _timestamp As System.Nullable(Of Date)
+	
+	Private _open As System.Nullable(Of Boolean)
+	
+	Private _openflag As String
+	
+	Private _closeflag As String
+	
+	Private _harvestkey As String
+	
+	Private _hedgeid As System.Nullable(Of Integer)
+	
+	Private _openrowid As System.Nullable(Of Integer)
+	
+	Private _closerowid As System.Nullable(Of Integer)
+	
+    #Region "Extensibility Method Definitions"
+    Partial Private Sub OnLoaded()
+    End Sub
+    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
+    End Sub
+    Partial Private Sub OnCreated()
+    End Sub
+    Partial Private Sub OnidChanging(value As Integer)
+    End Sub
+    Partial Private Sub OnidChanged()
+    End Sub
+    Partial Private Sub OnsymbolChanging(value As String)
+    End Sub
+    Partial Private Sub OnsymbolChanged()
+    End Sub
+    Partial Private Sub OnsharesChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnsharesChanged()
+    End Sub
+    Partial Private Sub OnopendateChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnopendateChanged()
+    End Sub
+    Partial Private Sub OnopenpriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnopenpriceChanged()
+    End Sub
+    Partial Private Sub OnhedgeChanging(value As System.Nullable(Of Boolean))
+    End Sub
+    Partial Private Sub OnhedgeChanged()
+    End Sub
+    Partial Private Sub OnstrikeChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnstrikeChanged()
+    End Sub
+    Partial Private Sub OnclosedateChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnclosedateChanged()
+    End Sub
+    Partial Private Sub OnclosepriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnclosepriceChanged()
+    End Sub
+    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OntimestampChanged()
+    End Sub
+    Partial Private Sub OnopenChanging(value As System.Nullable(Of Boolean))
+    End Sub
+    Partial Private Sub OnopenChanged()
+    End Sub
+    Partial Private Sub OnopenflagChanging(value As String)
+    End Sub
+    Partial Private Sub OnopenflagChanged()
+    End Sub
+    Partial Private Sub OncloseflagChanging(value As String)
+    End Sub
+    Partial Private Sub OncloseflagChanged()
+    End Sub
+    Partial Private Sub OnharvestkeyChanging(value As String)
+    End Sub
+    Partial Private Sub OnharvestkeyChanged()
+    End Sub
+    Partial Private Sub OnhedgeidChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnhedgeidChanged()
+    End Sub
+    Partial Private Sub OnopenrowidChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnopenrowidChanged()
+    End Sub
+    Partial Private Sub OncloserowidChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OncloserowidChanged()
+    End Sub
+    #End Region
+	
+	Public Sub New()
+		MyBase.New
+		OnCreated
+	End Sub
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
+	Public Property id() As Integer
+		Get
+			Return Me._id
+		End Get
+		Set
+			If ((Me._id = value)  _
+						= false) Then
+				Me.OnidChanging(value)
+				Me.SendPropertyChanging
+				Me._id = value
+				Me.SendPropertyChanged("id")
+				Me.OnidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_symbol", DbType:="NVarChar(4)")>  _
+	Public Property symbol() As String
+		Get
+			Return Me._symbol
+		End Get
+		Set
+			If (String.Equals(Me._symbol, value) = false) Then
+				Me.OnsymbolChanging(value)
+				Me.SendPropertyChanging
+				Me._symbol = value
+				Me.SendPropertyChanged("symbol")
+				Me.OnsymbolChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_shares", DbType:="Int")>  _
+	Public Property shares() As System.Nullable(Of Integer)
+		Get
+			Return Me._shares
+		End Get
+		Set
+			If (Me._shares.Equals(value) = false) Then
+				Me.OnsharesChanging(value)
+				Me.SendPropertyChanging
+				Me._shares = value
+				Me.SendPropertyChanged("shares")
+				Me.OnsharesChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opendate", DbType:="DateTime")>  _
+	Public Property opendate() As System.Nullable(Of Date)
+		Get
+			Return Me._opendate
+		End Get
+		Set
+			If (Me._opendate.Equals(value) = false) Then
+				Me.OnopendateChanging(value)
+				Me.SendPropertyChanging
+				Me._opendate = value
+				Me.SendPropertyChanged("opendate")
+				Me.OnopendateChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openprice", DbType:="Money")>  _
+	Public Property openprice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._openprice
+		End Get
+		Set
+			If (Me._openprice.Equals(value) = false) Then
+				Me.OnopenpriceChanging(value)
+				Me.SendPropertyChanging
+				Me._openprice = value
+				Me.SendPropertyChanged("openprice")
+				Me.OnopenpriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedge", DbType:="Bit")>  _
+	Public Property hedge() As System.Nullable(Of Boolean)
+		Get
+			Return Me._hedge
+		End Get
+		Set
+			If (Me._hedge.Equals(value) = false) Then
+				Me.OnhedgeChanging(value)
+				Me.SendPropertyChanging
+				Me._hedge = value
+				Me.SendPropertyChanged("hedge")
+				Me.OnhedgeChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_strike", DbType:="Money")>  _
+	Public Property strike() As System.Nullable(Of Decimal)
+		Get
+			Return Me._strike
+		End Get
+		Set
+			If (Me._strike.Equals(value) = false) Then
+				Me.OnstrikeChanging(value)
+				Me.SendPropertyChanging
+				Me._strike = value
+				Me.SendPropertyChanged("strike")
+				Me.OnstrikeChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closedate", DbType:="DateTime")>  _
+	Public Property closedate() As System.Nullable(Of Date)
+		Get
+			Return Me._closedate
+		End Get
+		Set
+			If (Me._closedate.Equals(value) = false) Then
+				Me.OnclosedateChanging(value)
+				Me.SendPropertyChanging
+				Me._closedate = value
+				Me.SendPropertyChanged("closedate")
+				Me.OnclosedateChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeprice", DbType:="Money")>  _
+	Public Property closeprice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._closeprice
+		End Get
+		Set
+			If (Me._closeprice.Equals(value) = false) Then
+				Me.OnclosepriceChanging(value)
+				Me.SendPropertyChanging
+				Me._closeprice = value
+				Me.SendPropertyChanged("closeprice")
+				Me.OnclosepriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
+	Public Property timestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._timestamp
+		End Get
+		Set
+			If (Me._timestamp.Equals(value) = false) Then
+				Me.OntimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._timestamp = value
+				Me.SendPropertyChanged("timestamp")
+				Me.OntimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Name:="[open]", Storage:="_open", DbType:="Bit")>  _
+	Public Property open() As System.Nullable(Of Boolean)
+		Get
+			Return Me._open
+		End Get
+		Set
+			If (Me._open.Equals(value) = false) Then
+				Me.OnopenChanging(value)
+				Me.SendPropertyChanging
+				Me._open = value
+				Me.SendPropertyChanged("open")
+				Me.OnopenChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openflag", DbType:="NVarChar(1)")>  _
+	Public Property openflag() As String
+		Get
+			Return Me._openflag
+		End Get
+		Set
+			If (String.Equals(Me._openflag, value) = false) Then
+				Me.OnopenflagChanging(value)
+				Me.SendPropertyChanging
+				Me._openflag = value
+				Me.SendPropertyChanged("openflag")
+				Me.OnopenflagChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeflag", DbType:="NVarChar(1)")>  _
+	Public Property closeflag() As String
+		Get
+			Return Me._closeflag
+		End Get
+		Set
+			If (String.Equals(Me._closeflag, value) = false) Then
+				Me.OncloseflagChanging(value)
+				Me.SendPropertyChanging
+				Me._closeflag = value
+				Me.SendPropertyChanged("closeflag")
+				Me.OncloseflagChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestkey", DbType:="NVarChar(12)")>  _
+	Public Property harvestkey() As String
+		Get
+			Return Me._harvestkey
+		End Get
+		Set
+			If (String.Equals(Me._harvestkey, value) = false) Then
+				Me.OnharvestkeyChanging(value)
+				Me.SendPropertyChanging
+				Me._harvestkey = value
+				Me.SendPropertyChanged("harvestkey")
+				Me.OnharvestkeyChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgeid", DbType:="Int")>  _
+	Public Property hedgeid() As System.Nullable(Of Integer)
+		Get
+			Return Me._hedgeid
+		End Get
+		Set
+			If (Me._hedgeid.Equals(value) = false) Then
+				Me.OnhedgeidChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgeid = value
+				Me.SendPropertyChanged("hedgeid")
+				Me.OnhedgeidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openrowid", DbType:="Int")>  _
+	Public Property openrowid() As System.Nullable(Of Integer)
+		Get
+			Return Me._openrowid
+		End Get
+		Set
+			If (Me._openrowid.Equals(value) = false) Then
+				Me.OnopenrowidChanging(value)
+				Me.SendPropertyChanging
+				Me._openrowid = value
+				Me.SendPropertyChanged("openrowid")
+				Me.OnopenrowidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closerowid", DbType:="Int")>  _
+	Public Property closerowid() As System.Nullable(Of Integer)
+		Get
+			Return Me._closerowid
+		End Get
+		Set
+			If (Me._closerowid.Equals(value) = false) Then
+				Me.OncloserowidChanging(value)
+				Me.SendPropertyChanging
+				Me._closerowid = value
+				Me.SendPropertyChanged("closerowid")
+				Me.OncloserowidChanged
+			End If
+		End Set
+	End Property
+	
+	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
+	
+	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+	
+	Protected Overridable Sub SendPropertyChanging()
+		If ((Me.PropertyChangingEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
+		End If
+	End Sub
+	
+	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
+		If ((Me.PropertyChangedEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+		End If
+	End Sub
+End Class
+
+<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestHedges")>  _
+Partial Public Class HarvestHedge
+	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
+	
+	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
+	
+	Private _id As Integer
+	
+	Private _symbol As String
+	
+	Private _type As String
+	
+	Private _lots As System.Nullable(Of Integer)
+	
+	Private _strike As System.Nullable(Of Decimal)
+	
+	Private _exp As System.Nullable(Of Date)
+	
+	Private _stockatopen As System.Nullable(Of Decimal)
+	
+	Private _opendate As System.Nullable(Of Date)
+	
+	Private _openprice As System.Nullable(Of Decimal)
+	
+	Private _stockatclose As System.Nullable(Of Decimal)
+	
+	Private _closedate As System.Nullable(Of Date)
+	
+	Private _closeprice As System.Nullable(Of Decimal)
+	
+	Private _open As System.Nullable(Of Boolean)
+	
+	Private _timestamp As System.Nullable(Of Date)
+	
+	Private _harvestkey As String
+	
+	Private _positionID As System.Nullable(Of Integer)
+	
+	Private _marketdate As System.Nullable(Of Date)
+	
+	Private _targetexit As System.Nullable(Of Decimal)
+	
+	Private _openrowid As System.Nullable(Of Integer)
+	
+	Private _closerowid As System.Nullable(Of Integer)
+	
+    #Region "Extensibility Method Definitions"
+    Partial Private Sub OnLoaded()
+    End Sub
+    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
+    End Sub
+    Partial Private Sub OnCreated()
+    End Sub
+    Partial Private Sub OnidChanging(value As Integer)
+    End Sub
+    Partial Private Sub OnidChanged()
+    End Sub
+    Partial Private Sub OnsymbolChanging(value As String)
+    End Sub
+    Partial Private Sub OnsymbolChanged()
+    End Sub
+    Partial Private Sub OntypeChanging(value As String)
+    End Sub
+    Partial Private Sub OntypeChanged()
+    End Sub
+    Partial Private Sub OnlotsChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnlotsChanged()
+    End Sub
+    Partial Private Sub OnstrikeChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnstrikeChanged()
+    End Sub
+    Partial Private Sub OnexpChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnexpChanged()
+    End Sub
+    Partial Private Sub OnstockatopenChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnstockatopenChanged()
+    End Sub
+    Partial Private Sub OnopendateChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnopendateChanged()
+    End Sub
+    Partial Private Sub OnopenpriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnopenpriceChanged()
+    End Sub
+    Partial Private Sub OnstockatcloseChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnstockatcloseChanged()
+    End Sub
+    Partial Private Sub OnclosedateChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnclosedateChanged()
+    End Sub
+    Partial Private Sub OnclosepriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnclosepriceChanged()
+    End Sub
+    Partial Private Sub OnopenChanging(value As System.Nullable(Of Boolean))
+    End Sub
+    Partial Private Sub OnopenChanged()
+    End Sub
+    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OntimestampChanged()
+    End Sub
+    Partial Private Sub OnharvestkeyChanging(value As String)
+    End Sub
+    Partial Private Sub OnharvestkeyChanged()
+    End Sub
+    Partial Private Sub OnpositionIDChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnpositionIDChanged()
+    End Sub
+    Partial Private Sub OnmarketdateChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnmarketdateChanged()
+    End Sub
+    Partial Private Sub OntargetexitChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OntargetexitChanged()
+    End Sub
+    Partial Private Sub OnopenrowidChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnopenrowidChanged()
+    End Sub
+    Partial Private Sub OncloserowidChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OncloserowidChanged()
+    End Sub
+    #End Region
+	
+	Public Sub New()
+		MyBase.New
+		OnCreated
+	End Sub
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
+	Public Property id() As Integer
+		Get
+			Return Me._id
+		End Get
+		Set
+			If ((Me._id = value)  _
+						= false) Then
+				Me.OnidChanging(value)
+				Me.SendPropertyChanging
+				Me._id = value
+				Me.SendPropertyChanged("id")
+				Me.OnidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_symbol", DbType:="NVarChar(4)")>  _
+	Public Property symbol() As String
+		Get
+			Return Me._symbol
+		End Get
+		Set
+			If (String.Equals(Me._symbol, value) = false) Then
+				Me.OnsymbolChanging(value)
+				Me.SendPropertyChanging
+				Me._symbol = value
+				Me.SendPropertyChanged("symbol")
+				Me.OnsymbolChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_type", DbType:="NVarChar(1)")>  _
+	Public Property type() As String
+		Get
+			Return Me._type
+		End Get
+		Set
+			If (String.Equals(Me._type, value) = false) Then
+				Me.OntypeChanging(value)
+				Me.SendPropertyChanging
+				Me._type = value
+				Me.SendPropertyChanged("type")
+				Me.OntypeChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_lots", DbType:="Int")>  _
+	Public Property lots() As System.Nullable(Of Integer)
+		Get
+			Return Me._lots
+		End Get
+		Set
+			If (Me._lots.Equals(value) = false) Then
+				Me.OnlotsChanging(value)
+				Me.SendPropertyChanging
+				Me._lots = value
+				Me.SendPropertyChanged("lots")
+				Me.OnlotsChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_strike", DbType:="Money")>  _
+	Public Property strike() As System.Nullable(Of Decimal)
+		Get
+			Return Me._strike
+		End Get
+		Set
+			If (Me._strike.Equals(value) = false) Then
+				Me.OnstrikeChanging(value)
+				Me.SendPropertyChanging
+				Me._strike = value
+				Me.SendPropertyChanged("strike")
+				Me.OnstrikeChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_exp", DbType:="Date")>  _
+	Public Property exp() As System.Nullable(Of Date)
+		Get
+			Return Me._exp
+		End Get
+		Set
+			If (Me._exp.Equals(value) = false) Then
+				Me.OnexpChanging(value)
+				Me.SendPropertyChanging
+				Me._exp = value
+				Me.SendPropertyChanged("exp")
+				Me.OnexpChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_stockatopen", DbType:="Money")>  _
+	Public Property stockatopen() As System.Nullable(Of Decimal)
+		Get
+			Return Me._stockatopen
+		End Get
+		Set
+			If (Me._stockatopen.Equals(value) = false) Then
+				Me.OnstockatopenChanging(value)
+				Me.SendPropertyChanging
+				Me._stockatopen = value
+				Me.SendPropertyChanged("stockatopen")
+				Me.OnstockatopenChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opendate", DbType:="DateTime")>  _
+	Public Property opendate() As System.Nullable(Of Date)
+		Get
+			Return Me._opendate
+		End Get
+		Set
+			If (Me._opendate.Equals(value) = false) Then
+				Me.OnopendateChanging(value)
+				Me.SendPropertyChanging
+				Me._opendate = value
+				Me.SendPropertyChanged("opendate")
+				Me.OnopendateChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openprice", DbType:="Money")>  _
+	Public Property openprice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._openprice
+		End Get
+		Set
+			If (Me._openprice.Equals(value) = false) Then
+				Me.OnopenpriceChanging(value)
+				Me.SendPropertyChanging
+				Me._openprice = value
+				Me.SendPropertyChanged("openprice")
+				Me.OnopenpriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_stockatclose", DbType:="Money")>  _
+	Public Property stockatclose() As System.Nullable(Of Decimal)
+		Get
+			Return Me._stockatclose
+		End Get
+		Set
+			If (Me._stockatclose.Equals(value) = false) Then
+				Me.OnstockatcloseChanging(value)
+				Me.SendPropertyChanging
+				Me._stockatclose = value
+				Me.SendPropertyChanged("stockatclose")
+				Me.OnstockatcloseChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closedate", DbType:="DateTime")>  _
+	Public Property closedate() As System.Nullable(Of Date)
+		Get
+			Return Me._closedate
+		End Get
+		Set
+			If (Me._closedate.Equals(value) = false) Then
+				Me.OnclosedateChanging(value)
+				Me.SendPropertyChanging
+				Me._closedate = value
+				Me.SendPropertyChanged("closedate")
+				Me.OnclosedateChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closeprice", DbType:="Money")>  _
+	Public Property closeprice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._closeprice
+		End Get
+		Set
+			If (Me._closeprice.Equals(value) = false) Then
+				Me.OnclosepriceChanging(value)
+				Me.SendPropertyChanging
+				Me._closeprice = value
+				Me.SendPropertyChanged("closeprice")
+				Me.OnclosepriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Name:="[open]", Storage:="_open", DbType:="Bit")>  _
+	Public Property open() As System.Nullable(Of Boolean)
+		Get
+			Return Me._open
+		End Get
+		Set
+			If (Me._open.Equals(value) = false) Then
+				Me.OnopenChanging(value)
+				Me.SendPropertyChanging
+				Me._open = value
+				Me.SendPropertyChanged("open")
+				Me.OnopenChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
+	Public Property timestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._timestamp
+		End Get
+		Set
+			If (Me._timestamp.Equals(value) = false) Then
+				Me.OntimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._timestamp = value
+				Me.SendPropertyChanged("timestamp")
+				Me.OntimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestkey", DbType:="NVarChar(12)")>  _
+	Public Property harvestkey() As String
+		Get
+			Return Me._harvestkey
+		End Get
+		Set
+			If (String.Equals(Me._harvestkey, value) = false) Then
+				Me.OnharvestkeyChanging(value)
+				Me.SendPropertyChanging
+				Me._harvestkey = value
+				Me.SendPropertyChanged("harvestkey")
+				Me.OnharvestkeyChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_positionID", DbType:="Int")>  _
+	Public Property positionID() As System.Nullable(Of Integer)
+		Get
+			Return Me._positionID
+		End Get
+		Set
+			If (Me._positionID.Equals(value) = false) Then
+				Me.OnpositionIDChanging(value)
+				Me.SendPropertyChanging
+				Me._positionID = value
+				Me.SendPropertyChanged("positionID")
+				Me.OnpositionIDChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_marketdate", DbType:="Date")>  _
+	Public Property marketdate() As System.Nullable(Of Date)
+		Get
+			Return Me._marketdate
+		End Get
+		Set
+			If (Me._marketdate.Equals(value) = false) Then
+				Me.OnmarketdateChanging(value)
+				Me.SendPropertyChanging
+				Me._marketdate = value
+				Me.SendPropertyChanged("marketdate")
+				Me.OnmarketdateChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_targetexit", DbType:="Money")>  _
+	Public Property targetexit() As System.Nullable(Of Decimal)
+		Get
+			Return Me._targetexit
+		End Get
+		Set
+			If (Me._targetexit.Equals(value) = false) Then
+				Me.OntargetexitChanging(value)
+				Me.SendPropertyChanging
+				Me._targetexit = value
+				Me.SendPropertyChanged("targetexit")
+				Me.OntargetexitChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openrowid", DbType:="Int")>  _
+	Public Property openrowid() As System.Nullable(Of Integer)
+		Get
+			Return Me._openrowid
+		End Get
+		Set
+			If (Me._openrowid.Equals(value) = false) Then
+				Me.OnopenrowidChanging(value)
+				Me.SendPropertyChanging
+				Me._openrowid = value
+				Me.SendPropertyChanged("openrowid")
+				Me.OnopenrowidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_closerowid", DbType:="Int")>  _
+	Public Property closerowid() As System.Nullable(Of Integer)
+		Get
+			Return Me._closerowid
+		End Get
+		Set
+			If (Me._closerowid.Equals(value) = false) Then
+				Me.OncloserowidChanging(value)
+				Me.SendPropertyChanging
+				Me._closerowid = value
+				Me.SendPropertyChanged("closerowid")
+				Me.OncloserowidChanged
+			End If
+		End Set
+	End Property
+	
+	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
+	
+	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+	
+	Protected Overridable Sub SendPropertyChanging()
+		If ((Me.PropertyChangingEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
+		End If
+	End Sub
+	
+	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
+		If ((Me.PropertyChangedEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+		End If
+	End Sub
+End Class
+
+<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestIndex")>  _
+Partial Public Class HarvestIndex
+	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
+	
+	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
+	
+	Private _id As Integer
+	
+	Private _harvestKey As String
+	
+	Private _userID As System.Nullable(Of System.Guid)
+	
+	Private _name As String
+	
+	Private _product As String
+	
+	Private _opentrigger As System.Nullable(Of Decimal)
+	
+	Private _width As System.Nullable(Of Decimal)
+	
+	Private _timestamp As System.Nullable(Of Date)
+	
+	Private _active As System.Nullable(Of Boolean)
+	
+	Private _shares As System.Nullable(Of Integer)
+	
+	Private _hedge As System.Nullable(Of Boolean)
+	
+	Private _hedgewidth As System.Nullable(Of Decimal)
+	
+	Private _expdatewidth As System.Nullable(Of Integer)
+	
+	Private _hedgelots As System.Nullable(Of Integer)
+	
+	Private _pricetoprotect As System.Nullable(Of Decimal)
+	
+	Private _OpeningMark As System.Nullable(Of Decimal)
+	
+    #Region "Extensibility Method Definitions"
+    Partial Private Sub OnLoaded()
+    End Sub
+    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
+    End Sub
+    Partial Private Sub OnCreated()
+    End Sub
+    Partial Private Sub OnidChanging(value As Integer)
+    End Sub
+    Partial Private Sub OnidChanged()
+    End Sub
+    Partial Private Sub OnharvestKeyChanging(value As String)
+    End Sub
+    Partial Private Sub OnharvestKeyChanged()
+    End Sub
+    Partial Private Sub OnuserIDChanging(value As System.Nullable(Of System.Guid))
+    End Sub
+    Partial Private Sub OnuserIDChanged()
+    End Sub
+    Partial Private Sub OnnameChanging(value As String)
+    End Sub
+    Partial Private Sub OnnameChanged()
+    End Sub
+    Partial Private Sub OnproductChanging(value As String)
+    End Sub
+    Partial Private Sub OnproductChanged()
+    End Sub
+    Partial Private Sub OnopentriggerChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnopentriggerChanged()
+    End Sub
+    Partial Private Sub OnwidthChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnwidthChanged()
+    End Sub
+    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OntimestampChanged()
+    End Sub
+    Partial Private Sub OnactiveChanging(value As System.Nullable(Of Boolean))
+    End Sub
+    Partial Private Sub OnactiveChanged()
+    End Sub
+    Partial Private Sub OnsharesChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnsharesChanged()
+    End Sub
+    Partial Private Sub OnhedgeChanging(value As System.Nullable(Of Boolean))
+    End Sub
+    Partial Private Sub OnhedgeChanged()
+    End Sub
+    Partial Private Sub OnhedgewidthChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnhedgewidthChanged()
+    End Sub
+    Partial Private Sub OnexpdatewidthChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnexpdatewidthChanged()
+    End Sub
+    Partial Private Sub OnhedgelotsChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnhedgelotsChanged()
+    End Sub
+    Partial Private Sub OnpricetoprotectChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnpricetoprotectChanged()
+    End Sub
+    Partial Private Sub OnOpeningMarkChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnOpeningMarkChanged()
+    End Sub
+    #End Region
+	
+	Public Sub New()
+		MyBase.New
+		OnCreated
+	End Sub
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
+	Public Property id() As Integer
+		Get
+			Return Me._id
+		End Get
+		Set
+			If ((Me._id = value)  _
+						= false) Then
+				Me.OnidChanging(value)
+				Me.SendPropertyChanging
+				Me._id = value
+				Me.SendPropertyChanged("id")
+				Me.OnidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_harvestKey", DbType:="NVarChar(12)")>  _
+	Public Property harvestKey() As String
+		Get
+			Return Me._harvestKey
+		End Get
+		Set
+			If (String.Equals(Me._harvestKey, value) = false) Then
+				Me.OnharvestKeyChanging(value)
+				Me.SendPropertyChanging
+				Me._harvestKey = value
+				Me.SendPropertyChanged("harvestKey")
+				Me.OnharvestKeyChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_userID", DbType:="UniqueIdentifier")>  _
+	Public Property userID() As System.Nullable(Of System.Guid)
+		Get
+			Return Me._userID
+		End Get
+		Set
+			If (Me._userID.Equals(value) = false) Then
+				Me.OnuserIDChanging(value)
+				Me.SendPropertyChanging
+				Me._userID = value
+				Me.SendPropertyChanged("userID")
+				Me.OnuserIDChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_name", DbType:="NVarChar(140)")>  _
+	Public Property name() As String
+		Get
+			Return Me._name
+		End Get
+		Set
+			If (String.Equals(Me._name, value) = false) Then
+				Me.OnnameChanging(value)
+				Me.SendPropertyChanging
+				Me._name = value
+				Me.SendPropertyChanged("name")
+				Me.OnnameChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_product", DbType:="NVarChar(4)")>  _
+	Public Property product() As String
+		Get
+			Return Me._product
+		End Get
+		Set
+			If (String.Equals(Me._product, value) = false) Then
+				Me.OnproductChanging(value)
+				Me.SendPropertyChanging
+				Me._product = value
+				Me.SendPropertyChanged("product")
+				Me.OnproductChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_opentrigger", DbType:="Money")>  _
+	Public Property opentrigger() As System.Nullable(Of Decimal)
+		Get
+			Return Me._opentrigger
+		End Get
+		Set
+			If (Me._opentrigger.Equals(value) = false) Then
+				Me.OnopentriggerChanging(value)
+				Me.SendPropertyChanging
+				Me._opentrigger = value
+				Me.SendPropertyChanged("opentrigger")
+				Me.OnopentriggerChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_width", DbType:="Money")>  _
+	Public Property width() As System.Nullable(Of Decimal)
+		Get
+			Return Me._width
+		End Get
+		Set
+			If (Me._width.Equals(value) = false) Then
+				Me.OnwidthChanging(value)
+				Me.SendPropertyChanging
+				Me._width = value
+				Me.SendPropertyChanged("width")
+				Me.OnwidthChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
+	Public Property timestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._timestamp
+		End Get
+		Set
+			If (Me._timestamp.Equals(value) = false) Then
+				Me.OntimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._timestamp = value
+				Me.SendPropertyChanged("timestamp")
+				Me.OntimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_active", DbType:="Bit")>  _
+	Public Property active() As System.Nullable(Of Boolean)
+		Get
+			Return Me._active
+		End Get
+		Set
+			If (Me._active.Equals(value) = false) Then
+				Me.OnactiveChanging(value)
+				Me.SendPropertyChanging
+				Me._active = value
+				Me.SendPropertyChanged("active")
+				Me.OnactiveChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_shares", DbType:="Int")>  _
+	Public Property shares() As System.Nullable(Of Integer)
+		Get
+			Return Me._shares
+		End Get
+		Set
+			If (Me._shares.Equals(value) = false) Then
+				Me.OnsharesChanging(value)
+				Me.SendPropertyChanging
+				Me._shares = value
+				Me.SendPropertyChanged("shares")
+				Me.OnsharesChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedge", DbType:="Bit")>  _
+	Public Property hedge() As System.Nullable(Of Boolean)
+		Get
+			Return Me._hedge
+		End Get
+		Set
+			If (Me._hedge.Equals(value) = false) Then
+				Me.OnhedgeChanging(value)
+				Me.SendPropertyChanging
+				Me._hedge = value
+				Me.SendPropertyChanged("hedge")
+				Me.OnhedgeChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgewidth", DbType:="Money")>  _
+	Public Property hedgewidth() As System.Nullable(Of Decimal)
+		Get
+			Return Me._hedgewidth
+		End Get
+		Set
+			If (Me._hedgewidth.Equals(value) = false) Then
+				Me.OnhedgewidthChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgewidth = value
+				Me.SendPropertyChanged("hedgewidth")
+				Me.OnhedgewidthChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_expdatewidth", DbType:="Int")>  _
+	Public Property expdatewidth() As System.Nullable(Of Integer)
+		Get
+			Return Me._expdatewidth
+		End Get
+		Set
+			If (Me._expdatewidth.Equals(value) = false) Then
+				Me.OnexpdatewidthChanging(value)
+				Me.SendPropertyChanging
+				Me._expdatewidth = value
+				Me.SendPropertyChanged("expdatewidth")
+				Me.OnexpdatewidthChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgelots", DbType:="Int")>  _
+	Public Property hedgelots() As System.Nullable(Of Integer)
+		Get
+			Return Me._hedgelots
+		End Get
+		Set
+			If (Me._hedgelots.Equals(value) = false) Then
+				Me.OnhedgelotsChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgelots = value
+				Me.SendPropertyChanged("hedgelots")
+				Me.OnhedgelotsChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_pricetoprotect", DbType:="Money")>  _
+	Public Property pricetoprotect() As System.Nullable(Of Decimal)
+		Get
+			Return Me._pricetoprotect
+		End Get
+		Set
+			If (Me._pricetoprotect.Equals(value) = false) Then
+				Me.OnpricetoprotectChanging(value)
+				Me.SendPropertyChanging
+				Me._pricetoprotect = value
+				Me.SendPropertyChanged("pricetoprotect")
+				Me.OnpricetoprotectChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_OpeningMark", DbType:="Money")>  _
+	Public Property OpeningMark() As System.Nullable(Of Decimal)
+		Get
+			Return Me._OpeningMark
+		End Get
+		Set
+			If (Me._OpeningMark.Equals(value) = false) Then
+				Me.OnOpeningMarkChanging(value)
+				Me.SendPropertyChanging
+				Me._OpeningMark = value
+				Me.SendPropertyChanged("OpeningMark")
+				Me.OnOpeningMarkChanged
+			End If
+		End Set
+	End Property
+	
+	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
+	
+	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+	
+	Protected Overridable Sub SendPropertyChanging()
+		If ((Me.PropertyChangingEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
+		End If
+	End Sub
+	
+	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
+		If ((Me.PropertyChangedEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+		End If
+	End Sub
+End Class
+
 <Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.HarvestLogs")>  _
 Partial Public Class HarvestLog
 	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
@@ -2633,8 +2943,6 @@ Partial Public Class HarvestLog
 	Private _ID As Integer
 	
 	Private _harvestkey As String
-	
-	Private _userid As System.Nullable(Of System.Guid)
 	
 	Private _marketdate As System.Nullable(Of Date)
 	
@@ -2650,6 +2958,24 @@ Partial Public Class HarvestLog
 	
 	Private _otimestamp As System.Nullable(Of Date)
 	
+	Private _hedgeprofit As System.Nullable(Of Decimal)
+	
+	Private _stockprofit As System.Nullable(Of Decimal)
+	
+	Private _currentcapital As System.Nullable(Of Decimal)
+	
+	Private _maxcapital As System.Nullable(Of Decimal)
+	
+	Private _sharesbought As System.Nullable(Of Integer)
+	
+	Private _sharessold As System.Nullable(Of Integer)
+	
+	Private _hedgebought As System.Nullable(Of Integer)
+	
+	Private _hedgesold As System.Nullable(Of Integer)
+	
+	Private _openingmark As System.Nullable(Of Decimal)
+	
     #Region "Extensibility Method Definitions"
     Partial Private Sub OnLoaded()
     End Sub
@@ -2664,10 +2990,6 @@ Partial Public Class HarvestLog
     Partial Private Sub OnharvestkeyChanging(value As String)
     End Sub
     Partial Private Sub OnharvestkeyChanged()
-    End Sub
-    Partial Private Sub OnuseridChanging(value As System.Nullable(Of System.Guid))
-    End Sub
-    Partial Private Sub OnuseridChanged()
     End Sub
     Partial Private Sub OnmarketdateChanging(value As System.Nullable(Of Date))
     End Sub
@@ -2696,6 +3018,42 @@ Partial Public Class HarvestLog
     Partial Private Sub OnotimestampChanging(value As System.Nullable(Of Date))
     End Sub
     Partial Private Sub OnotimestampChanged()
+    End Sub
+    Partial Private Sub OnhedgeprofitChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnhedgeprofitChanged()
+    End Sub
+    Partial Private Sub OnstockprofitChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnstockprofitChanged()
+    End Sub
+    Partial Private Sub OncurrentcapitalChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OncurrentcapitalChanged()
+    End Sub
+    Partial Private Sub OnmaxcapitalChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnmaxcapitalChanged()
+    End Sub
+    Partial Private Sub OnsharesboughtChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnsharesboughtChanged()
+    End Sub
+    Partial Private Sub OnsharessoldChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnsharessoldChanged()
+    End Sub
+    Partial Private Sub OnhedgeboughtChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnhedgeboughtChanged()
+    End Sub
+    Partial Private Sub OnhedgesoldChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnhedgesoldChanged()
+    End Sub
+    Partial Private Sub OnopeningmarkChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnopeningmarkChanged()
     End Sub
     #End Region
 	
@@ -2733,22 +3091,6 @@ Partial Public Class HarvestLog
 				Me._harvestkey = value
 				Me.SendPropertyChanged("harvestkey")
 				Me.OnharvestkeyChanged
-			End If
-		End Set
-	End Property
-	
-	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_userid", DbType:="UniqueIdentifier")>  _
-	Public Property userid() As System.Nullable(Of System.Guid)
-		Get
-			Return Me._userid
-		End Get
-		Set
-			If (Me._userid.Equals(value) = false) Then
-				Me.OnuseridChanging(value)
-				Me.SendPropertyChanging
-				Me._userid = value
-				Me.SendPropertyChanged("userid")
-				Me.OnuseridChanged
 			End If
 		End Set
 	End Property
@@ -2861,6 +3203,648 @@ Partial Public Class HarvestLog
 				Me._otimestamp = value
 				Me.SendPropertyChanged("otimestamp")
 				Me.OnotimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgeprofit", DbType:="Money")>  _
+	Public Property hedgeprofit() As System.Nullable(Of Decimal)
+		Get
+			Return Me._hedgeprofit
+		End Get
+		Set
+			If (Me._hedgeprofit.Equals(value) = false) Then
+				Me.OnhedgeprofitChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgeprofit = value
+				Me.SendPropertyChanged("hedgeprofit")
+				Me.OnhedgeprofitChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_stockprofit", DbType:="Money")>  _
+	Public Property stockprofit() As System.Nullable(Of Decimal)
+		Get
+			Return Me._stockprofit
+		End Get
+		Set
+			If (Me._stockprofit.Equals(value) = false) Then
+				Me.OnstockprofitChanging(value)
+				Me.SendPropertyChanging
+				Me._stockprofit = value
+				Me.SendPropertyChanged("stockprofit")
+				Me.OnstockprofitChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_currentcapital", DbType:="Money")>  _
+	Public Property currentcapital() As System.Nullable(Of Decimal)
+		Get
+			Return Me._currentcapital
+		End Get
+		Set
+			If (Me._currentcapital.Equals(value) = false) Then
+				Me.OncurrentcapitalChanging(value)
+				Me.SendPropertyChanging
+				Me._currentcapital = value
+				Me.SendPropertyChanged("currentcapital")
+				Me.OncurrentcapitalChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_maxcapital", DbType:="Money")>  _
+	Public Property maxcapital() As System.Nullable(Of Decimal)
+		Get
+			Return Me._maxcapital
+		End Get
+		Set
+			If (Me._maxcapital.Equals(value) = false) Then
+				Me.OnmaxcapitalChanging(value)
+				Me.SendPropertyChanging
+				Me._maxcapital = value
+				Me.SendPropertyChanged("maxcapital")
+				Me.OnmaxcapitalChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_sharesbought", DbType:="Int")>  _
+	Public Property sharesbought() As System.Nullable(Of Integer)
+		Get
+			Return Me._sharesbought
+		End Get
+		Set
+			If (Me._sharesbought.Equals(value) = false) Then
+				Me.OnsharesboughtChanging(value)
+				Me.SendPropertyChanging
+				Me._sharesbought = value
+				Me.SendPropertyChanged("sharesbought")
+				Me.OnsharesboughtChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_sharessold", DbType:="Int")>  _
+	Public Property sharessold() As System.Nullable(Of Integer)
+		Get
+			Return Me._sharessold
+		End Get
+		Set
+			If (Me._sharessold.Equals(value) = false) Then
+				Me.OnsharessoldChanging(value)
+				Me.SendPropertyChanging
+				Me._sharessold = value
+				Me.SendPropertyChanged("sharessold")
+				Me.OnsharessoldChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgebought", DbType:="Int")>  _
+	Public Property hedgebought() As System.Nullable(Of Integer)
+		Get
+			Return Me._hedgebought
+		End Get
+		Set
+			If (Me._hedgebought.Equals(value) = false) Then
+				Me.OnhedgeboughtChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgebought = value
+				Me.SendPropertyChanged("hedgebought")
+				Me.OnhedgeboughtChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_hedgesold", DbType:="Int")>  _
+	Public Property hedgesold() As System.Nullable(Of Integer)
+		Get
+			Return Me._hedgesold
+		End Get
+		Set
+			If (Me._hedgesold.Equals(value) = false) Then
+				Me.OnhedgesoldChanging(value)
+				Me.SendPropertyChanging
+				Me._hedgesold = value
+				Me.SendPropertyChanged("hedgesold")
+				Me.OnhedgesoldChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_openingmark", DbType:="Money")>  _
+	Public Property openingmark() As System.Nullable(Of Decimal)
+		Get
+			Return Me._openingmark
+		End Get
+		Set
+			If (Me._openingmark.Equals(value) = false) Then
+				Me.OnopeningmarkChanging(value)
+				Me.SendPropertyChanging
+				Me._openingmark = value
+				Me.SendPropertyChanged("openingmark")
+				Me.OnopeningmarkChanged
+			End If
+		End Set
+	End Property
+	
+	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
+	
+	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+	
+	Protected Overridable Sub SendPropertyChanging()
+		If ((Me.PropertyChangingEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
+		End If
+	End Sub
+	
+	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
+		If ((Me.PropertyChangedEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+		End If
+	End Sub
+End Class
+
+<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.stockorders")>  _
+Partial Public Class stockorder
+	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
+	
+	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
+	
+	Private _id As Integer
+	
+	Private _timestamp As System.Nullable(Of Date)
+	
+	Private _OrderId As String
+	
+	Private _PermID As System.Nullable(Of Integer)
+	
+	Private _Symbol As String
+	
+	Private _Action As String
+	
+	Private _Status As String
+	
+	Private _TickPrice As System.Nullable(Of Decimal)
+	
+	Private _LimitPrice As System.Nullable(Of Decimal)
+	
+	Private _Quantity As System.Nullable(Of Integer)
+	
+	Private _OrderStatus As String
+	
+	Private _OrderTimestamp As System.Nullable(Of Date)
+	
+	Private _roboIndex As String
+	
+    #Region "Extensibility Method Definitions"
+    Partial Private Sub OnLoaded()
+    End Sub
+    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
+    End Sub
+    Partial Private Sub OnCreated()
+    End Sub
+    Partial Private Sub OnidChanging(value As Integer)
+    End Sub
+    Partial Private Sub OnidChanged()
+    End Sub
+    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OntimestampChanged()
+    End Sub
+    Partial Private Sub OnOrderIdChanging(value As String)
+    End Sub
+    Partial Private Sub OnOrderIdChanged()
+    End Sub
+    Partial Private Sub OnPermIDChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnPermIDChanged()
+    End Sub
+    Partial Private Sub OnSymbolChanging(value As String)
+    End Sub
+    Partial Private Sub OnSymbolChanged()
+    End Sub
+    Partial Private Sub OnActionChanging(value As String)
+    End Sub
+    Partial Private Sub OnActionChanged()
+    End Sub
+    Partial Private Sub OnStatusChanging(value As String)
+    End Sub
+    Partial Private Sub OnStatusChanged()
+    End Sub
+    Partial Private Sub OnTickPriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnTickPriceChanged()
+    End Sub
+    Partial Private Sub OnLimitPriceChanging(value As System.Nullable(Of Decimal))
+    End Sub
+    Partial Private Sub OnLimitPriceChanged()
+    End Sub
+    Partial Private Sub OnQuantityChanging(value As System.Nullable(Of Integer))
+    End Sub
+    Partial Private Sub OnQuantityChanged()
+    End Sub
+    Partial Private Sub OnOrderStatusChanging(value As String)
+    End Sub
+    Partial Private Sub OnOrderStatusChanged()
+    End Sub
+    Partial Private Sub OnOrderTimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnOrderTimestampChanged()
+    End Sub
+    Partial Private Sub OnroboIndexChanging(value As String)
+    End Sub
+    Partial Private Sub OnroboIndexChanged()
+    End Sub
+    #End Region
+	
+	Public Sub New()
+		MyBase.New
+		OnCreated
+	End Sub
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
+	Public Property id() As Integer
+		Get
+			Return Me._id
+		End Get
+		Set
+			If ((Me._id = value)  _
+						= false) Then
+				Me.OnidChanging(value)
+				Me.SendPropertyChanging
+				Me._id = value
+				Me.SendPropertyChanged("id")
+				Me.OnidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
+	Public Property timestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._timestamp
+		End Get
+		Set
+			If (Me._timestamp.Equals(value) = false) Then
+				Me.OntimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._timestamp = value
+				Me.SendPropertyChanged("timestamp")
+				Me.OntimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_OrderId", DbType:="NVarChar(15)")>  _
+	Public Property OrderId() As String
+		Get
+			Return Me._OrderId
+		End Get
+		Set
+			If (String.Equals(Me._OrderId, value) = false) Then
+				Me.OnOrderIdChanging(value)
+				Me.SendPropertyChanging
+				Me._OrderId = value
+				Me.SendPropertyChanged("OrderId")
+				Me.OnOrderIdChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_PermID", DbType:="Int")>  _
+	Public Property PermID() As System.Nullable(Of Integer)
+		Get
+			Return Me._PermID
+		End Get
+		Set
+			If (Me._PermID.Equals(value) = false) Then
+				Me.OnPermIDChanging(value)
+				Me.SendPropertyChanging
+				Me._PermID = value
+				Me.SendPropertyChanged("PermID")
+				Me.OnPermIDChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_Symbol", DbType:="NVarChar(4)")>  _
+	Public Property Symbol() As String
+		Get
+			Return Me._Symbol
+		End Get
+		Set
+			If (String.Equals(Me._Symbol, value) = false) Then
+				Me.OnSymbolChanging(value)
+				Me.SendPropertyChanging
+				Me._Symbol = value
+				Me.SendPropertyChanged("Symbol")
+				Me.OnSymbolChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_Action", DbType:="NVarChar(4)")>  _
+	Public Property Action() As String
+		Get
+			Return Me._Action
+		End Get
+		Set
+			If (String.Equals(Me._Action, value) = false) Then
+				Me.OnActionChanging(value)
+				Me.SendPropertyChanging
+				Me._Action = value
+				Me.SendPropertyChanged("Action")
+				Me.OnActionChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_Status", DbType:="NVarChar(25)")>  _
+	Public Property Status() As String
+		Get
+			Return Me._Status
+		End Get
+		Set
+			If (String.Equals(Me._Status, value) = false) Then
+				Me.OnStatusChanging(value)
+				Me.SendPropertyChanging
+				Me._Status = value
+				Me.SendPropertyChanged("Status")
+				Me.OnStatusChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_TickPrice", DbType:="Money")>  _
+	Public Property TickPrice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._TickPrice
+		End Get
+		Set
+			If (Me._TickPrice.Equals(value) = false) Then
+				Me.OnTickPriceChanging(value)
+				Me.SendPropertyChanging
+				Me._TickPrice = value
+				Me.SendPropertyChanged("TickPrice")
+				Me.OnTickPriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_LimitPrice", DbType:="Money")>  _
+	Public Property LimitPrice() As System.Nullable(Of Decimal)
+		Get
+			Return Me._LimitPrice
+		End Get
+		Set
+			If (Me._LimitPrice.Equals(value) = false) Then
+				Me.OnLimitPriceChanging(value)
+				Me.SendPropertyChanging
+				Me._LimitPrice = value
+				Me.SendPropertyChanged("LimitPrice")
+				Me.OnLimitPriceChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_Quantity", DbType:="Int")>  _
+	Public Property Quantity() As System.Nullable(Of Integer)
+		Get
+			Return Me._Quantity
+		End Get
+		Set
+			If (Me._Quantity.Equals(value) = false) Then
+				Me.OnQuantityChanging(value)
+				Me.SendPropertyChanging
+				Me._Quantity = value
+				Me.SendPropertyChanged("Quantity")
+				Me.OnQuantityChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_OrderStatus", DbType:="NVarChar(10)")>  _
+	Public Property OrderStatus() As String
+		Get
+			Return Me._OrderStatus
+		End Get
+		Set
+			If (String.Equals(Me._OrderStatus, value) = false) Then
+				Me.OnOrderStatusChanging(value)
+				Me.SendPropertyChanging
+				Me._OrderStatus = value
+				Me.SendPropertyChanged("OrderStatus")
+				Me.OnOrderStatusChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_OrderTimestamp", DbType:="DateTime")>  _
+	Public Property OrderTimestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._OrderTimestamp
+		End Get
+		Set
+			If (Me._OrderTimestamp.Equals(value) = false) Then
+				Me.OnOrderTimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._OrderTimestamp = value
+				Me.SendPropertyChanged("OrderTimestamp")
+				Me.OnOrderTimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_roboIndex", DbType:="NVarChar(12)")>  _
+	Public Property roboIndex() As String
+		Get
+			Return Me._roboIndex
+		End Get
+		Set
+			If (String.Equals(Me._roboIndex, value) = false) Then
+				Me.OnroboIndexChanging(value)
+				Me.SendPropertyChanging
+				Me._roboIndex = value
+				Me.SendPropertyChanged("roboIndex")
+				Me.OnroboIndexChanged
+			End If
+		End Set
+	End Property
+	
+	Public Event PropertyChanging As PropertyChangingEventHandler Implements System.ComponentModel.INotifyPropertyChanging.PropertyChanging
+	
+	Public Event PropertyChanged As PropertyChangedEventHandler Implements System.ComponentModel.INotifyPropertyChanged.PropertyChanged
+	
+	Protected Overridable Sub SendPropertyChanging()
+		If ((Me.PropertyChangingEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanging(Me, emptyChangingEventArgs)
+		End If
+	End Sub
+	
+	Protected Overridable Sub SendPropertyChanged(ByVal propertyName As [String])
+		If ((Me.PropertyChangedEvent Is Nothing)  _
+					= false) Then
+			RaiseEvent PropertyChanged(Me, New PropertyChangedEventArgs(propertyName))
+		End If
+	End Sub
+End Class
+
+<Global.System.Data.Linq.Mapping.TableAttribute(Name:="dbo.positions")>  _
+Partial Public Class position
+	Implements System.ComponentModel.INotifyPropertyChanging, System.ComponentModel.INotifyPropertyChanged
+	
+	Private Shared emptyChangingEventArgs As PropertyChangingEventArgs = New PropertyChangingEventArgs(String.Empty)
+	
+	Private _id As Integer
+	
+	Private _timestamp As System.Nullable(Of Date)
+	
+	Private _lasttimestamp As System.Nullable(Of Date)
+	
+	Private _symbol As String
+	
+	Private _qty As System.Nullable(Of Long)
+	
+	Private _roboIndex As String
+	
+    #Region "Extensibility Method Definitions"
+    Partial Private Sub OnLoaded()
+    End Sub
+    Partial Private Sub OnValidate(action As System.Data.Linq.ChangeAction)
+    End Sub
+    Partial Private Sub OnCreated()
+    End Sub
+    Partial Private Sub OnidChanging(value As Integer)
+    End Sub
+    Partial Private Sub OnidChanged()
+    End Sub
+    Partial Private Sub OntimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OntimestampChanged()
+    End Sub
+    Partial Private Sub OnlasttimestampChanging(value As System.Nullable(Of Date))
+    End Sub
+    Partial Private Sub OnlasttimestampChanged()
+    End Sub
+    Partial Private Sub OnsymbolChanging(value As String)
+    End Sub
+    Partial Private Sub OnsymbolChanged()
+    End Sub
+    Partial Private Sub OnqtyChanging(value As System.Nullable(Of Long))
+    End Sub
+    Partial Private Sub OnqtyChanged()
+    End Sub
+    Partial Private Sub OnroboIndexChanging(value As String)
+    End Sub
+    Partial Private Sub OnroboIndexChanged()
+    End Sub
+    #End Region
+	
+	Public Sub New()
+		MyBase.New
+		OnCreated
+	End Sub
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_id", AutoSync:=AutoSync.OnInsert, DbType:="Int NOT NULL IDENTITY", IsPrimaryKey:=true, IsDbGenerated:=true)>  _
+	Public Property id() As Integer
+		Get
+			Return Me._id
+		End Get
+		Set
+			If ((Me._id = value)  _
+						= false) Then
+				Me.OnidChanging(value)
+				Me.SendPropertyChanging
+				Me._id = value
+				Me.SendPropertyChanged("id")
+				Me.OnidChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_timestamp", DbType:="DateTime")>  _
+	Public Property timestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._timestamp
+		End Get
+		Set
+			If (Me._timestamp.Equals(value) = false) Then
+				Me.OntimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._timestamp = value
+				Me.SendPropertyChanged("timestamp")
+				Me.OntimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_lasttimestamp", DbType:="DateTime")>  _
+	Public Property lasttimestamp() As System.Nullable(Of Date)
+		Get
+			Return Me._lasttimestamp
+		End Get
+		Set
+			If (Me._lasttimestamp.Equals(value) = false) Then
+				Me.OnlasttimestampChanging(value)
+				Me.SendPropertyChanging
+				Me._lasttimestamp = value
+				Me.SendPropertyChanged("lasttimestamp")
+				Me.OnlasttimestampChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_symbol", DbType:="NVarChar(4)")>  _
+	Public Property symbol() As String
+		Get
+			Return Me._symbol
+		End Get
+		Set
+			If (String.Equals(Me._symbol, value) = false) Then
+				Me.OnsymbolChanging(value)
+				Me.SendPropertyChanging
+				Me._symbol = value
+				Me.SendPropertyChanged("symbol")
+				Me.OnsymbolChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_qty", DbType:="BigInt")>  _
+	Public Property qty() As System.Nullable(Of Long)
+		Get
+			Return Me._qty
+		End Get
+		Set
+			If (Me._qty.Equals(value) = false) Then
+				Me.OnqtyChanging(value)
+				Me.SendPropertyChanging
+				Me._qty = value
+				Me.SendPropertyChanged("qty")
+				Me.OnqtyChanged
+			End If
+		End Set
+	End Property
+	
+	<Global.System.Data.Linq.Mapping.ColumnAttribute(Storage:="_roboIndex", DbType:="NVarChar(12)")>  _
+	Public Property roboIndex() As String
+		Get
+			Return Me._roboIndex
+		End Get
+		Set
+			If (String.Equals(Me._roboIndex, value) = false) Then
+				Me.OnroboIndexChanging(value)
+				Me.SendPropertyChanging
+				Me._roboIndex = value
+				Me.SendPropertyChanged("roboIndex")
+				Me.OnroboIndexChanged
 			End If
 		End Set
 	End Property
