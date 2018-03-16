@@ -56,7 +56,7 @@
                         <a data-toggle="dropdown" class="dropdown-toggle navbar-user" href="javascript:;">
                             
                             <img class="img-circle" src="../../img/profile.jpg">
-                            <span class="hidden-xs"> boss</span>
+                            <span class="hidden-xs"> <%= Page.User.Identity.Name %>     </span>
                             
                             <b class="caret"></b>
                         </a>

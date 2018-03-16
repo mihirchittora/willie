@@ -114,10 +114,13 @@ Partial Class wavesDataContext
         Return stockorders.Single(Function(p) p.PermID = permID And p.Action = action)
     End Function
 
-    Public Function pullstockorder(ByVal oID As String, ByVal action As String) As stockorder
-        Return stockorders.Single(Function(p) p.OrderId = oID And p.Action = action)
+    Public Function pullstockorder(ByVal oID As String, ByVal action As String, ByVal lmtprice As Double) As stockorder
+        Return stockorders.Single(Function(p) p.OrderId = oID And p.LimitPrice = lmtprice And p.Action = action)
     End Function
 
+    Public Function getSOtocancel(ByVal price As Double, ByVal act As String) As stockorder
+        Return stockorders.Single(Function(p) p.LimitPrice = price And p.Action = act And p.OrderStatus = "Open")
+    End Function
 
     Public Function stockposExists(ByVal symbol As String) As Boolean
         Return Me.positions.Any(Function(u) u.symbol = symbol)

@@ -11,9 +11,9 @@ Index
         <!-- CSS -->         
         <%--<link rel="stylesheet" href="http://localhost:1295/cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">--%>
     
-        <script src="../../Content/assets/code/highcharts.js"></script>
-        <script src="../../Content/assets/code/highcharts-more.js"></script>
-        <script src="../../Content/assets/code/modules/exporting.js"></script>
+        <%--<script src="../../Content/assets/code/highcharts.js"></script>--%>
+        <%--<script src="../../Content/assets/code/highcharts-more.js"></script>--%>
+        <%-- %><script src="../../Content/assets/code/modules/exporting.js"></script>--%>
         
         <link rel="stylesheet" href="../../content/assets/demo/css/cstyle.css">
         <script src="../../Content/assets/demo/js/easypiechart.js"></script>
@@ -23,7 +23,7 @@ Index
                 <img class="img-circle profile-image" src="../../img/profile.jpg">
 
                 <div class="profile-body">
-                    <h4> boss</h4>
+                    <h4> <%= Page.User.Identity.Name %></h4>
                     <div class="sidebar-user-links">
                         <a class="btn btn-link btn-xs" href='<%: Url.Action("profile", "Member")%>' data-placement="bottom" data-toggle="tooltip" data-original-title="Profile"><i class="fa fa-user"></i></a>
                         <a class="btn btn-link btn-xs" href="javascript:;"       data-placement="bottom" data-toggle="tooltip" data-original-title="Messages"><i class="fa fa-envelope"></i></a>
@@ -47,9 +47,16 @@ Index
                             <li><a href='<%: Url.Action("forwardtest", "Member")%>'><i class="fa fa-lg fa-fw fa-caret-right"></i> Forward Test Bot</a></li>
                             <li><a href='<%: Url.Action("blackscholes", "Member")%>'><i class="fa fa-lg fa-fw fa-caret-right"></i> Black Scholes</a></li>
                             <li><a href='<%: Url.Action("IBtest", "Member")%>'><i class="fa fa-lg fa-fw fa-caret-right"></i> IB API Test</a></li>
-                            <li><a href='<%: Url.Action("", "Member")%>'><i class="fa fa-lg fa-fw fa-check-circle-o"></i> Test</a></li>                                
+                            <li><a href='<%: Url.Action("robot", "Member")%>'><i class="fa fa-lg fa-fw fa-caret-right"></i> Harvest Robot "Willie"</a></li>
+                            <%--<li><a href='<%: Url.Action("", "Member")%>'><i class="fa fa-lg fa-fw fa-check-circle-o"></i> Test</a></li> --%>                               
                         </ul>
-                    </li>                        
+                    </li> 
+                    <li class="nav-dropdown"><a href="#" title="development"><i class="fa fa-lg fa-fw fa-code"></i> Development</a>
+                        <ul class="nav-sub">                            
+                            <li><a href='<%: Url.Action("index", "test")%>'><i class="fa fa-lg fa-fw fa-spinner"></i> Test</a></li> 
+                            <li><a href='<%: Url.Action("IBtest", "Member")%>'><i class="fa fa-lg fa-fw fa-caret-right"></i> IB API Test</a></li>
+                        </ul>
+                    </li>
                 </ul>                       
             </nav>
         </aside>
@@ -70,7 +77,7 @@ Index
                                 <h4 class="panel-title">System Performance</h4>                                    
                             </div>
                             <div class="panel-body">
-                                <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+                                <%--<div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>--%>
                                 <%--<div id="myfirstchart" style="height: 300px"></div>--%>
                             </div>
                         
@@ -85,13 +92,13 @@ Index
 
                             <div class="panel-body">
                                 <div class="metric-content metric-icon"  style="padding-left: 3em;">                                                       
-                                    <span class="chart" data-percent=<%= Html.Encode(String.Format("{0:##.#}", "21.7"))%>>                                        
-                                        <span class="percent"><%= Html.Encode(String.Format("{0:##.#}", "21.7"))%></span>                                        
+                                    <span class="chart" data-percent=<%= Html.Encode(String.Format("{0:##.#}", "5.6"))%>>                                        
+                                        <span class="percent"><%= Html.Encode(String.Format("{0:##.#}", "5.6"))%></span>                                        
                                     </span>                                        
                                 </div>
-                                <h3 style="padding-top: 5em;">Monthly $: <span class="bold" style="float: right; padding-right: 10px;">$11,325</span></h3>
-                                <h3>Annual ROC: <span class="bold" style="float: right; padding-right: 10px;">260.4%</span></h3> 
-                                <h3>Annual $: <span class="bold" style="float: right; padding-right: 10px;">$101,926</span></h3>
+                                <h3 style="padding-top: 5em;">Monthly $: <span class="bold" style="float: right; padding-right: 10px;">$ 75</span></h3>
+                                <h3>Annual ROC: <span class="bold" style="float: right; padding-right: 10px;">66.67%</span></h3> 
+                                <h3>Annual $: <span class="bold" style="float: right; padding-right: 10px;">$ 75</span></h3>
                             </div>
                         </div>
                     </div>
@@ -108,6 +115,7 @@ Index
                                                                     
                                     <h3>Status:   <span class="bold" style="float: right; padding-right: 10px;"><%: ViewData("connected")%></span></h3>
                                     <h3>Active orders:   <span style="float: right; padding-right: 10px;"><%: ViewData("openOrderCount")%></span></h3>
+                                    <h3>Last Order Id:   <span style="float: right; padding-right: 10px;"><%: ViewData("orderid")%></span></h3>
                                     <%--<h3>Status:   <span class="bold" style="float: right; padding-right: 10px;"><%: ViewData("connected")%></span></h3>
                                     <h3>Status:   <span class="bold" style="float: right; padding-right: 10px;"><%: ViewData("connected")%></span></h3>
                                     <h3>Status:   <span class="bold" style="float: right; padding-right: 10px;"><%: ViewData("connected")%></span></h3>
@@ -142,7 +150,8 @@ Index
                                         
                                                 <thead>
                                                     <tr>
-                                                        <th class="subtitle mb5">id</th>
+                                                        <th class="subtitle mb5">OrderId</th>
+                                                        <th class="subtitle mb5">PermId</th>
                                                         <th class="subtitle mb5">symbol</th>
                                                         <th class="subtitle mb5">action</th>
                                                         <th class="subtitle mb5">price</th> 
@@ -153,6 +162,7 @@ Index
                                                    <%For Each item In Model.OrderList%>
                                                         <% If item.secType <> "OPT" Then%>
                                                             <tr>
+                                                                <td><%: item.OId%></td>
                                                                 <td><%: item.PermId%></td>
                                                                 <td><%: item.Symbol%></td>
                                                                 <td><%: item.OAction%></td>
@@ -232,7 +242,7 @@ Index
 
     <!-- Scripts -->  
     
-    <script type="text/javascript">
+    <%--<script type="text/javascript">
 
 
             Highcharts.chart('container', {
@@ -347,7 +357,7 @@ Index
                 }]
             });
 
-		</script>
+		</script>--%>
 
     <script>
 

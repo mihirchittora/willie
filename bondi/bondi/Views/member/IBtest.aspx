@@ -91,17 +91,26 @@ IB API Test
                                             <%= Html.DropDownListFor(Function(x) x.SelectedIndex, New SelectList(Model.AllIndexes, "HarvestKey", "Name", Model.SelectedIndex), New With {.class = "form-control form-select2", .placeHolder = "Choose an experiment...", .id = "harvestIndex", .name = "harvestIndex"})%>
                                             <%--<input type="text"class="form-control" id="expsymbol" placeholder="AAPL">--%>
                                         </div>
-                                        <button type="submit"id="getDataAPI" name="getDataAPI" class="btn btn-primary">START</button>
+                                        <button type="submit"id="runRobot" name="runRobot" class="btn btn-primary">START</button>
                                         
                                         <input type="text"class="form-control" id="primebuy" placeholder="00.00">
+                                        <%--<input type="text"class="form-control" id="expsymbol" placeholder="AAPL">--%>
+                                        <%--<button type="submit"id="getDataAPI" name="getDataAPI" class="btn btn-primary">START</button>--%>
                                         <%--<button type="submit"id="apiOrder" name="apiOrder" class="btn btn-primary">ORDER</button>--%>
                                         <%--<button type="submit"id="apiHistorical" name="apiHistorical" class="btn btn-primary">History</button>--%>
                                         <%--<button type="submit"id="apiOption" name="apiOption" class="btn btn-primary">OPTION</button>--%>
                                         <%--<button type="submit"id="apiOrderStatus" name="apiOrderStatus" class="btn btn-primary">ORDER STATUS</button>--%>
                                         <%--<button type="submit"id="apiStarting" name="apiStarting" class="btn btn-primary">SHELL</button>--%>
-                                        <%--<button type="submit"id="apiPosition" name="apiPosition" class="btn btn-primary">PORTFOLIO</button> --%>                                                                                       
+                                        <%--<button type="submit"id="apiPosition" name="apiPosition" class="btn btn-primary">PORTFOLIO</button> --%> 
+                                        <input type="text"class="form-control" id="sanddata" placeholder="1">
+                                        <button type="submit"id="sandbox" name="sandbox" class="btn btn-primary">SANDBOX</button>
+                                        
+                                        <div class="row" style="padding-left: 1em; padding-top: 1em;">
+                                          <input type="text"class="form-control" id="orderprice" placeholder="$ 0.00">
+                                          <button type="submit"id="sendOrder" name="sendOrder" class="btn btn-primary">SEND ORDER</button>
+                                      </div> 
                                     </div>
-                                                                                                      
+                                                                                                     
                                 </div>                        
                                 <%--<div class="form-group text-right" style="padding-bottom: 5px; padding-right: 5px;">                                    
                                     <button type="submit" id="connectAPI" name="connectAPI" class="btn btn-primary">Connect</button>
@@ -163,16 +172,20 @@ IB API Test
     <script type="text/javascript">
 
         $(document).ready(function () {
-            $("#apiOrder").click(function () {                
+            $("#sendOrder").click(function () {                
 
-                //alert("here");
+                testcheck = document.getElementById('harvestIndex');
+                //var value = testcheck.options[testcheck.selectedIndex].value;
+                harvestkey = testcheck.options[testcheck.selectedIndex].value;
+
+                alert("here");
 
                 $.ajax({
                     method: 'POST',
-                    url: "/member/apiOrder",
+                    url: "/member/sendOrder",
                     data: {                                                
-                        symbol: $("#expsymbol").val(),
-                        rowid: 0,
+                        primebuy: $("#orderprice").val(),
+                        robotindex: harvestkey,                        
                         testdata: new Date().toISOString()
                     }
                 })
@@ -294,7 +307,7 @@ IB API Test
 
     </script>                                                                                                                   <%--// CALL FUNCTION THAT WILL PULL HISTORICAL DATA FOR SYMBOL--%>
 
-    <%-- <script type="text/javascript">
+    <script type="text/javascript">
         
          //ORIGINAL WORKING CODE FOR PULLING DATA VIA THE API ONE TIME -> KEEP THIS CODE!
 
@@ -304,7 +317,9 @@ IB API Test
          var rowint = 0                                                                                          // HOLDS THE ROW ID. INITIALIZED AT 0
 
          $(document).ready(function () {
+             btn1 = $('#getDataAPI'); 
              $("#getDataAPI").click(function () {
+                 $(btn1).prop('disabled', true);
                  $("#connectStatus").html("Working");
                  $.ajax({
                      method: 'POST',
@@ -312,31 +327,79 @@ IB API Test
 
                      data: {
                          testdata: new Date().toISOString(),
-                         symbol: $("#expsymbol").val()
+                         symbol: $("#expsymbol").val(),
+                         rowid: rowint
                      }
                  })
                  .done(function (result) {
-                     $("#connectStatus").html(result);
+                    $("#connectStatus").html("Complete");
+                     // Add the result from the controller action to the page 
+                   
+                    $(btn1).prop('disabled', false);
+                                           
+                     var mindata = result;
+                     $("#botlist ul").append('<li style="list-style-type: none;">' + mindata + '</li>');  // Change to get data from the controller to append.   + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " - Minute: "
+                //document.getElementById('messagecenter').innerHTML == result
                  });
 
              });
          });
 
-    </script>--%>
+    </script>
+
+    <script type="text/javascript">
+
+         //ORIGINAL WORKING CODE FOR PULLING DATA VIA THE API ONE TIME -> KEEP THIS CODE!
+
+         // SET THE VARIABLES USED IN THE SCRIPT
+         var timeout = 60;                                                                                       // SETS THE TIME BETWEEN LOOPS IN SECONDS
+         var intervalID = null;                                                                                  // HOLDS THE INTERVAL ID FOR THE LOOPS
+         var rowint = 0                                                                                          // HOLDS THE ROW ID. INITIALIZED AT 0
+
+         $(document).ready(function () {
+             btn1 = $('#sandbox');
+             $("#sandbox").click(function () {
+                 $(btn1).prop('disabled', true);
+                 $("#connectStatus").html("Working");
+                 $.ajax({
+                     method: 'POST',
+                     url: "/member/sandbox",
+
+                     data: {
+                         testdata: new Date().toISOString(),
+                         sanddata: $("#sanddata").val(),
+                         rowid: rowint
+                     }
+                 })
+                     .done(function (result) {
+                         $("#connectStatus").html(result);
+                         // Add the result from the controller action to the page 
+
+                         $(btn1).prop('disabled', false);
+
+                         //var mindata = result;
+                         //$("#botlist ul").append('<li style="list-style-type: none;">' + mindata + '</li>');  // Change to get data from the controller to append.   + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + " - Minute: "
+                         //document.getElementById('messagecenter').innerHTML == result
+                     });
+
+             });
+         });
+
+    </script>
 
     <script>
 
-        var controller = 'member';                                                                              // Name of the controller        
-        var action = 'runRobot'                                                                                 // Name of the action //'apiOrderStatus';  'apiOrder'; 
+        var controller = 'test';                                                                              // Name of the controller        
+        var action = 'willie'                                                                                 // Name of the action //'apiOrderStatus';  'apiOrder'; 
         var timeout = 60;                                                                                       // revert back to 60 for live system. This handles the timeout between calls in seconds      ONE HOUR = 3,600,000 MILISECONDS  
         var intervalID = null;                                                                                  // Holds the interval id        
         var minuteinterval = 0                                                                                  // Hold the rowID
         var rowint = 0
         var keeprunning = 0        
-        var rows = 1                                                                                          // SET THE ROWS TO RUN - FULL DAY = 391         
+        var rows = 1                                                                                         // SET THE ROWS TO RUN - FULL DAY = 391         
 
         $(function () {
-            btn = $('#getDataAPI');                                                                             // Replace with the button's selector
+            btn = $('#runRobot');                                                                             // Replace with the button's selector
             
             $(btn).click(function (e) {
                 e.preventDefault();                                                                             // Prevent default bubbling                                                                                                                                

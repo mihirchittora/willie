@@ -15,9 +15,8 @@ Public Class HomeController
         '                   
         ' **********************************************************************************************************************************************************
 
-
-        'Return RedirectToAction("automate", "member")
         Return RedirectToAction("index", "member")
+        'Return RedirectToAction("ibtest", "member")
         'Return RedirectToAction("logon", "account")
 
 
@@ -64,7 +63,7 @@ Public Class HomeController
         'End Using
 
 
-        Return View()
+        ' Return View()
     End Function
 
     Function blog(ByVal article As Integer) As ActionResult

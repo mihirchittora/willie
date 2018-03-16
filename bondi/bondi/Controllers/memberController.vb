@@ -37,10 +37,14 @@ Namespace bondi
         Dim stockprofit As Double
         Dim connected As String
 
+        ' <Authorize()>
         Function Index() As ActionResult                                                                                                                                                    ' LOADS THE INITIAL DASHBOARD FOR THE LOGGED IN USER
 
             Dim openOrderCount As String = ""                                                                                                                                               ' USED TO SET THE OPEN ORDER COUNT IN THE VIEW.
             Dim model As New wavesViewModel()                                                                                                                                               ' INSTANCIATES A NEW MODEL TO PASS DATA FROM CONTROLLER TO VIEW
+            Dim maxorderid As Integer = 0                                                                                                                                                   ' HOUSES AND MANAGES THE ORDER IDS FOR THE SYSTEM
+
+            'MsgBox(User.Identity.Name)
 
             ' Set up pull from previous months data to fill the highchart data from database
             ' Set up pull to calculate average monthly return to populate the easypie chart
@@ -58,9 +62,10 @@ Namespace bondi
 
             Using db As New wavesDataContext                                                                                                                                                ' INSTANCIATES CONNECTION TO THE DATA CONTEXT TO ACCESS THE DATA TABLES
 
-                'Dim ordertablelist = (From m In db.stockorders Select m).ToList()                                                                                                             ' PULLS OFF OF THE INDEXES TO POPULATE THE DROPDOWN LIST IN THE VIEW
+                'Dim ordertablelist = (From m In Tws1.OpenOrderList Select m Order By (m.PermId) Ascending).ToList()                                                                                                            ' PULLS OFF OF THE INDEXES TO POPULATE THE DROPDOWN LIST IN THE VIEW
 
                 ' This loop will test the open orders in TWS against the db - need to determine the other way around too. Filled orders.
+
 
                 For Each item In Tws1.OpenOrderList
                     'MsgBox(item.PermId & " " & item.Symbol)
@@ -71,21 +76,26 @@ Namespace bondi
                     End If
                 Next
 
+                maxorderid = (From q In db.stockorders Select q.OrderId).Max()                                                                                                          ' RETRIEVE THE MAX ORDER ID FROM THE TABLE TO SEND A NEW ORDER TO TWS 
 
             End Using
 
-
-
             openOrderCount = (Tws1.OpenOrderList.Count())                                                                                                                                        ' OBTAIN THE TOTAL NUMBER OF OPEN ORDERS TO DISPLAY ON THE PAGE
 
+            Tws1.OpenOrderList = (From m In Tws1.OpenOrderList Select m Order By (m.OId) Ascending).ToList()
 
             model.OrderList = Tws1.OpenOrderList
+
+            'model.OrderList = ordertablelist
+
             'model.PositionList = Tws1.listPositionsMessage
 
             'For Each item In model.PositionList
             '    MsgBox(item.Contract.Symbol)
             'Next
-
+            'MsgBox(Tws1.OrderID)
+            ' Tws1.reqIds(-1)
+            ViewData("orderid") = maxorderid.ToString()
             ViewData("openOrderCount") = openOrderCount
             ViewData("connected") = connected
 
@@ -111,11 +121,6 @@ Namespace bondi
             '    Order By keys.Year, keys.Month Ascending _
             '    Select New With {.year = keys.Year, .month = keys.Month, .bought = Group.Sum(Function(x) x.sharesbought), .sold = Group.Sum(Function(x) x.sharessold)}
 
-
-
-
-
-
             ' Dim summary5 = team.GroupBy(Function(x) New With {Key x.Office, Key x.Department}) _
             '.Select(Function(y) New With {.office = y.Key.Office, _
             '                              .dept = y.Key.Department, _
@@ -125,23 +130,11 @@ Namespace bondi
             '                              .ThenBy(Function(x) x.dept)
 
 
-
             'For Each item In loglist
             '    MsgBox(item.month & "/" & item.year & " " & item.bought & " " & item.sold)
             'Next
 
             'Stop
-
-
-
-
-
-
-
-
-
-
-
 
 
             'Dim contract As IBApi.Contract = New IBApi.Contract()
@@ -222,6 +215,1010 @@ Namespace bondi
             Return View(model)
         End Function
 
+        Function robot() As ActionResult
+            Using db As New wavesDataContext
+                Dim indexlist = (From m In db.HarvestIndexes Select m).ToList()                                                                                                 ' SELECT ALL TRADING CONTROL CARDS AND ADD THEM TO THE INDEX LIST                                
+
+                Dim model As New wavesViewModel()                                                                                                                               ' INITIALIZE THE MODEL TO BE USED FOR THE VIEW 
+                model.AllIndexes = indexlist                                                                                                                                    ' ADD THE INDEXLIST TO THE MODEL
+
+                Return View(model)                                                                                                                                              ' RETURN THE MODEL TO THE VIEW FOR DISPLAY
+            End Using
+        End Function
+
+        <HttpPost()>
+        Function willie(ByVal primebuy As String, ByVal robotindex As String, ByVal rowid As Integer) As ActionResult
+
+            ' ***** Initialize variables used in the robot. ***** 
+            Dim datastring As String = rowid.ToString() & ". " & String.Format("{0:hh:mm:ss}", Now.ToLocalTime) & " "                                                                   ' STRING USED TO PASS STATUS DETAIL FROM THE FUNCTION TO THE VIEW
+            Dim currentprice As Double = 0                                                                                                                                              ' VARIABLE USED TO HOLD THE CURRENT STOCK TICK PRICE
+            Dim symbol As String = ""                                                                                                                                                   ' HOUSES THE SYMBOL INFORMATION
+            Dim priceint As Integer = 0                                                                                                                                                 ' RETURNS THE INTEGER VALUE OF THE CURRENT PRICE USED FOR CALCULATIONS 
+            Dim checksum As Double = 0                                                                                                                                                  ' DOUBLE USED TO HOUSE THE CENTS OF THE STOCK TICK PRICE TO DETERMINE WHAT PRICE TO SEND THE ORDER AT
+            Dim tickprice As Double = 0
+
+            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                ' 1. PULL TRADING CONTROL CARDS FOR CURRENT USER
+                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                                                           ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
+                symbol = hi.product.ToUpper()                                                                                                                                           ' SETS THE SYMBOL FOR THE BACKTEST BASED ON THE EXPERIMENT SELECTED.                
+
+                ' 2. Get list of open orders for the control card product
+                Dim orderlist As List(Of stockorder)                                                                                                                                    ' INITIALIZE THE ORDERLIST TO HOLD ALL CURRENT STOCKORDERS
+
+                orderlist = (From stockorder In db.stockorders Where stockorder.roboIndex = robotindex).ToList                                                                          ' BUILDS THE ORDER LIST TO DETERMINE IF ANY ORDERS HAVE BEEN PLACED EVER FOR THIS ROBOT INDEX
+
+                If orderlist.Count = 0 Then                                                                                                                                             ' CHECK TO SEE IF THERE IS AN ORDER FOR THIS ROBOT INDEX
+                    currentprice = GetPrice(robotindex)                                                                                                                                 ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE                   
+
+                    priceint = Int(Tws1.StockTickPrice)                                                                                                                                 ' RETURN THE INTERVAL OF THE STOCK TICK PRICE
+                    checksum = Tws1.StockTickPrice - priceint                                                                                                                           ' RETURN THE DECIMALS IN THE STOCK TICK PRICE FOR THE CALCULATIONS
+                    currentprice = (Int(checksum / hi.opentrigger) * hi.opentrigger + priceint)                                                                                         ' CALCULATE THE NEAREST MARK PRICE TO SET THE LIMIT ORDER AGAINST                    
+
+                    Call firstorder(robotindex, "BUY", currentprice, 1, 1)                                                                                                              ' CALLED FUNCTION TO PLACE THE FIRST ORDER FOR THIS USER
+
+                    datastring = datastring & " BTO " & hi.shares & " @ " & String.Format("{0:C}", currentprice)                                                                        ' ADD STATUS UPDATE TO THE DATASTRING
+
+                Else
+
+                    connected = TWSconnect()                                                                                                                                            ' CALLED FUNCTION TO CONNECT TO TWS                                                    
+                    Tws1.reqAllOpenOrders()                                                                                                                                             ' GET OPEN POSITIONS TO DETERMINE WHAT IS OPEN AND WHAT HAS FILLED.            
+                    Thread.Sleep(500)                                                                                                                                                   ' DELAY TIMER OF A HALF SECOND
+                    Tws1.disconnect()                                                                                                                                                   ' DISCONNECT FROM THE TWS API
+
+                    Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                               ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST FROM TWS
+
+                    orderlist = (From stockorder In db.stockorders Where stockorder.roboIndex = robotindex And stockorder.OrderStatus = "Open"
+                                 Order By stockorder.LimitPrice Descending).ToList                                                                                                      ' BUILDS THE ORDER LIST TO COMPARE WHAT ORDERS ARE IN THE TABLE TO OPEN ORDERS IN TWS
+
+
+                    ' This section of code checks whether an order has been filled.
+                    For Each item In orderlist                                                                                                                                          ' CHECK EACH ITEM IN THE ORDERLIST AGAINST THE OPEN ORDERS TO DETERMINE IF AN ORDER HAS FILLED
+
+                        Dim itemExist As Boolean = Tws1.OpenOrderList.Any(Function(x) x.Symbol = item.Symbol And x.LmtPrice = item.LimitPrice)                                          ' QUERY TO SEARCH LIST TO DETERMINE IF ORDER IN TABLE EXISTS IN TWS LIST
+                        If itemExist = False Then                                                                                                                                       ' ORDER WAS FILLED, PROCESS NEXT STEPS FOLLOWING THAT FILL
+                            If item.Action = "BUY" Then                                                                                                                                 ' IF THE ORDER FILLED WAS A BUY TO OPEN ORDER THEN COMPLETE THE FOLLOWING
+
+                                currentprice = GetPrice(robotindex)                                                                                                                     ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE
+
+                                Call UpdateOrder(currentprice, item.PermID, item.Action)                                                                                                ' CALLED FUNCTION TO UPDATE THE FILLED ORDER STATUS
+
+                                datastring = datastring & " BTO Filled at: " & String.Format("{0:C}", item.LimitPrice)                                                                  ' UPDATE THE DATASTRING WITH THE FILLED BUY ORDER INFORMATION
+
+                                'Dim so = db.getstockorder(item.PermID, item.Action)                                                                                                     ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
+                                'so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                               ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
+                                'so.TickPrice = currentprice                                                                                                                             ' UPDATE THE TICKPRICE WITH THE CURRENT PRICE THE ORDER WAS FILLED AT
+                                'so.Status = "Filled"                                                                                                                                    ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
+                                'so.OrderStatus = "Closed"                                                                                                                               ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
+                                'db.SubmitChanges()                                                                                                                                      ' SUBMIT CHANGES TO THE DATABASE
+
+                                Call sendorder(robotindex, "SELL", item.LimitPrice, item.OrderId, 1)                                                                                    ' CALLED FUNCTION TO SEND A SELL ORDER TO TWS AT THE LIMIT PRICE WITH MATCHING ORDER ID AND INCREMENT TO ADD
+
+                                datastring = datastring & " BTO Filled at: " & String.Format("{0:C}", item.LimitPrice)                                                                  ' UPDATE THE DATASTRING WITH THE SELL TO CLOSE ORDER INFORMATION
+
+                                Call sendorder(robotindex, "BUY", item.LimitPrice, item.OrderId, 1)                                                                                     ' CALLED FUNCTION TO SEND A BUY ORDER TO TWS AT THE LIMIT PRICE WITH MATCHING ORDER ID AND INCREMENT TO ADD
+
+                                datastring = datastring & " BTO @ " & String.Format("{0:C}", item.LimitPrice - hi.width) & " "                                                          ' UPDATE THE DATASTRING WITH THE BUY TO OPEN ORDER INFORMATION
+
+                            ElseIf item.Action = "SELL" Then                                                                                                                            ' IF THE ORDER FILLED WAS A SELL TO CLOSE ORDER THEN COMPLETE THE FOLLOWING
+
+                                currentprice = GetPrice(robotindex)                                                                                                                     ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE
+
+                                Call UpdateOrder(currentprice, item.PermID, item.Action)                                                                                                ' CALLED FUNCTION TO UPDATE THE FILLED ORDER STATUS
+
+                                'Dim so = db.getstockorder(item.PermID, item.Action)                                                                                                     ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
+                                'so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                               ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
+                                'so.TickPrice = currentprice                                                                                                                             ' UPDATE THE TICKPRICE WITH THE CURRENT PRICE THE ORDER WAS FILLED AT
+                                'so.Status = "Filled"                                                                                                                                    ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
+                                'so.OrderStatus = "Closed"                                                                                                                               ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
+                                'db.SubmitChanges()                                                                                                                                      ' SUBMIT THE CHANGES TO THE DATABASE
+
+                                Dim tempprice As Double = item.LimitPrice - (hi.width * 2)                                                                                              ' CALCULATE THE PRICE TO PULL THE LOWER OPEN ORDER (MAY WANT TO REFACTOR TO ENSURE ALL ARE CAUGHT)
+                                Dim temporderid As Integer = item.OrderId                                                                                                               ' SET A TEMP VARIAIBLE TO ORDER ID TO SEND THE BUY ORDER AFTER THE CANCELLATION AND NOT CONFLICT ORDER IDS IN TWS
+
+                                Dim checklist As List(Of stockorder)
+
+                                checklist = (From stockorder In db.stockorders Where stockorder.roboIndex = robotindex And stockorder.OrderStatus =
+                                                                                   "Open" Order By stockorder.LimitPrice Descending).ToList                                             ' BUILDS THE ORDER LIST TO COMPARE WHAT ORDERS ARE IN THE TABLE TO OPEN ORDERS IN TWS
+
+                                For Each o In checklist
+                                    If o.LimitPrice = tempprice Then
+
+                                        connected = TWSconnect()                                                                                                                        ' CALL THE CONNECTION FUNCTION TO THE TWS API
+                                        Call Tws1.cancelOrder(o.OrderId)                                                                                                                ' CANCEL THE LOWER OPEN ORDER (RELIEVES CAPITAL REQUIRED)
+                                        Tws1.disconnect()                                                                                                                               ' CALL THE DISCONNECTION FUNCTION TO THE TWS API                                        
+
+                                        Dim ou = db.getSOtocancel(tempprice, "BUY")                                                                                                     ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+                                        ou.Status = "Cancelled"                                                                                                                         ' UPDATE STATUS
+                                        ou.OrderStatus = "Cancelled"                                                                                                                    ' UPDATE ORDERSTATUS
+                                        ou.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                       ' UPDATE TIMESTAMP OF TRANSACTION
+                                        db.SubmitChanges()                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE
+
+                                    End If
+                                Next
+
+                                Call sendorder(robotindex, "BUY", item.LimitPrice, temporderid, 1)                                                                                     ' CALL THE POSTORDER FUNCTION SENDING A BUY TO OPEN ORDER 
+
+                                datastring = datastring & " STC Filled @ " & String.Format("{0:C}", item.LimitPrice) & " BTO @ " & String.Format("{0:C}", item.LimitPrice - hi.width) &
+                                    " BTO Cancelled @ " & String.Format("{0:C}", item.LimitPrice - (hi.width * 2)) & " " & String.Format("{0:hh:mm:ss}", Now.ToLocalTime)
+                                    End If
+                                    Else
+                            'Stop
+                            'currentprice = GetPrice(robotindex)                                                                                                                     ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE
+                            datastring = datastring & " None. "
+                        End If
+
+
+
+                    Next
+
+                    ' This section of code checks whether there is a need to send an order based on product price movment without triggering an order
+
+
+
+
+
+
+
+
+
+                    ' This section of code 
+                    'datastring = datastring & " None. "                                                                                                                             ' ADD STATUS UPDATE TO THE DATASTRING
+
+                End If
+
+
+            End Using
+
+            datastring = datastring & " " & String.Format("{0:hh:mm:ss}", Now.ToLocalTime)                                                                                                    ' ADD EXIT TIME TO THE DATASTRING TO SEE CODE CYCLETIME
+
+            Return Content(datastring)
+
+        End Function
+
+        Function IBtest() As ActionResult
+            Using db As New wavesDataContext
+                Dim indexlist = (From m In db.HarvestIndexes Select m).ToList()                                                                                                 ' SELECT ALL TRADING CONTROL CARDS AND ADD THEM TO THE INDEX LIST                
+
+                Dim model As New wavesViewModel()                                                                                                                               ' INITIALIZE THE MODEL TO BE USED FOR THE VIEW 
+                model.AllIndexes = indexlist                                                                                                                                    ' ADD THE INDEXLIST TO THE MODEL
+
+                Return View(model)                                                                                                                                              ' RETURN THE MODEL TO THE VIEW FOR DISPLAY
+            End Using
+        End Function
+
+        <HttpPost()>
+        Function sendOrder(ByVal orderprice As Double, ByVal harvestindex As String, ByVal testdata As Date) As ActionResult
+            Stop
+        End Function
+
+
+
+
+
+
+
+
+
+
+        <HttpPost()>
+        Function runRobot(ByVal testdata As Date, ByVal primebuy As String, ByVal robotindex As String, ByVal rowid As Integer) As ActionResult
+
+            ' ***** VARIABLES USED IN THIS FUNCTION *****
+            Dim csvdata As String = ""                                                                                                                                                  ' USED TO HOUSE THE TEXT FILE             
+            Dim path As String = "~\\content\assets\excel\intervals.csv"                                                                                                                ' BASE PATH OF THE FILE TO BE READ INTO MEMORY.
+            Dim fullpath As String = Request.MapPath("~\\content\assets\excel\intervals.csv")                                                                                           ' PROVIDES INTERVAL INFORMATION TO CALC THE ORDERID FOR EACH INTERVAL PER DAY.
+            Dim datastring As String = ""                                                                                                                                               ' DATASTRING THAT RETURNS RESULTS TO THE VIEW AND CALLS REQUIRED FUNCTIONS.
+            Dim width As Double = 0.25                                                                                                                                                  ' WIDTH VARIABLE CONTAINING THE AMOUNT BETWEEN PRICES EACH TIME YOU BUY OR SELL.
+            Dim connected As String = ""                                                                                                                                                ' STRING INITIALIZED WHEN CONNECTED TO TWS - DISPLAYS THE STATUS ONLINE OR OFFLINE.
+            Dim rnd As String = ""                                                                                                                                                      ' STRING USED TO BUILD THE ORDER ID **NOTE ANY NEW ODERID MUST BE LARGER THAN ANY ORDER IDs OF ORDERS STILL OPEN
+            Dim status As String = ""                                                                                                                                                   ' STRING USED TO DETERMINE WHETHER AN ORDER IS OPEN OR NOT VALUES: OPEN, FILLED, CANCELLED
+            Dim priceint As Integer = 0
+            Dim checksum As Double = 0                                                                                                                                                  ' DOUBLE USED TO HOUSE THE CENTS OF THE STOCK TICK PRICE TO DETERMINE WHAT PRICE TO SEND THE ORDER AT
+            Dim checkprice As Double = 0
+            Dim trades As Integer = 1                                                                                                                                                   ' INTEGER USED TO LOOP THROUGH THE NUMBER OF TRADES OCCURRING IN ANY INTERVAL (MULTIPLE ORDERS BEING PLACED PER MINUTE.)
+            Dim symbol As String = ""                                                                                                                                                   ' HOUSES THE SYMBOL INFORMATION
+            Dim matchID As String = ""                                                                                                                                                  ' USED TO KEEP ORDERS ALIGNED BUY AND SELL
+
+            Dim contract As IBApi.Contract = New IBApi.Contract()                                                                                                                       ' ESTABLISH A NEW CONTRACT CLASS
+            Dim order As IBApi.Order = New IBApi.Order()                                                                                                                                ' eSTABLISH A NEW ORDER CLASS
+
+            If Not IsNumeric(primebuy) Then
+                primebuy = 0.01
+            End If
+
+            ' SET UP THE INTERVALS FOR THE CURRENT TIME PERIOD
+            Using textReader As New System.IO.StreamReader(fullpath)                                                                                                                    ' TEXT READER PULLS AND READS THE FILE.
+                csvdata = textReader.ReadToEnd                                                                                                                                          ' LOAD THE ENTIRE FILE INTO THE STRING.
+            End Using                                                                                                                                                                   ' CLOSE THE TEXT READER.
+
+            Dim intervals As List(Of interval) = ParseIntervalData(csvdata)                                                                                                             ' CALL THE FUNCTION TO PARSE THE DATA INTO ROWS AND RETURN OPEN MARKET HOURS.
+
+            Dim timetemp As String = (String.Format("{0:h:mm}", Now()))                                                                                                                 ' TEMPORARY STRING HOLDING CURRENT TIME USED IN THE LOOP TO GET THE INTERVAL NUMBER
+
+            For Each interval In intervals                                                                                                                                              ' LOOP TO GET INTERVAL NUMBER FOR NEXTORDERID NUMBER
+                If timetemp = interval.iTime Then                                                                                                                                       ' CHECK INTERVAL TIME AGAINST CURRENT TIME
+                    'rnd = Mid(Year(Now()), 3, 2) & String.Format("{0:000}", Now.DayOfYear) & String.Format("{0:0000}", (interval.Interval)) & String.Format("{0:00}", (trades))
+                    'rnd = Mid(Year(Now()), 3, 2) & String.Format("{0:00}", Month(Now())) & String.Format("{0:00}", Day(Now())) & String.Format("{0:0000}", (interval.Interval + 1))     ' ESTABLISHES THE NEXTORDERID NUMBER THROUGH THIS VARIABLE
+                    rnd = Tws1.OrderID + 1
+                    datastring = interval.Interval & ": " & String.Format("{0:hh:mm:ss}", testdata.ToLocalTime) & " " & rnd & " "                                                                   ' INITIALIZE DATASTRING WITH ROWID, AND TIME
+                End If
+            Next
+
+            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                ' 1. PULL TRADING CONTROL CARDS FOR CURRENT USER
+                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                                                           ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
+                symbol = hi.product.ToUpper()                                                                                                                                           ' SETS THE SYMBOL FOR THE BACKTEST BASED ON THE EXPERIMENT SELECTED.
+
+                ' 2. Get list of open orders for the control card product
+                Dim orderlist As List(Of stockorder)
+
+                ' Pull any orders for the SYMBOL used in the Index that exist if any.
+                orderlist = (From stockorder In db.stockorders Where stockorder.roboIndex = robotindex And stockorder.OrderStatus = "Open" Order By stockorder.LimitPrice Descending).ToList   ' BUILDS THE ORDER LIST TO COMPARE WHAT ORDERS ARE IN THE TABLE TO OPEN ORDERS IN TWS
+
+                ' 3. Connect to TWS
+                connected = TWSconnect()                                                                                                                                                ' CALLED FUNCTION TO CONNECT TO TWS                                
+
+                If connected = "Off-line" Then
+
+                    'Return Content(datastring)
+
+                End If
+
+                ' 4. Get current open orders out of TWS
+                Tws1.reqAllOpenOrders()                                                                                                                                                 ' GET OPEN POSITIONS TO DETERMINE WHAT IS OPEN AND WHAT HAS FILLED.            
+                Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECOND
+
+                Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                                   ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST FROM TWS
+
+                ' 5. Check if there an order exists for the product selected
+                ' ***** IF THERE IS NOT AN ORDER IN THE DATABASE FOR THE SELECTED PRODUCT ADD AN ORDER BASED ON THE PRIME THE PUMP VALUE ENTERED *****
+                ' ***** BECAUSE YOU WANT TO GET INTO A POSITION IF THE PRICE IS JUST OVER A TRIGGER THE OPEN TO BUY IS SET AT THE NEAREST TRIGGER POINT *****
+                If orderlist.Count() = 0 Then                                                                                                                                           ' CHECKS TO SEE IF THERE ARE ANY ORDERS FOR CURRENT PRODUCT TO START THE STRATEGY
+
+                    ' Contract & Order variales that will remain constant 
+
+                    contract.Currency = "USD"                                                                                                                                           ' SET CURRENCY TO US DOLLARS (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    contract.Exchange = "SMART"                                                                                                                                         ' SET ROUTING EXCHANGE TO SMART  (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.OrderType = "LMT"                                                                                                                                             ' ORDER IS A LIMIT ORDER AND NOT A MARKET ORDER (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.Tif = "GTC"                                                                                                                                                   ' ORDER DURATION IS GOOD TIL CANCELLED (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+
+                    contract.SecType = "STK"                                                                                                                                            ' SET THE SECRUTIY TYPE TO STOCK (STK, OPT, CASH) (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    contract.Symbol = symbol.ToUpper()                                                                                                                                  ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.OrderId = rnd                                                                                                                                                 ' SET THE ORDERID TO BE AT LEAST 1 NUMBER HIGHER THAN ANY ORDERS PLACED
+                    order.Action = "BUY"                                                                                                                                                ' SET ACTION TO BUY. 
+                    order.TotalQuantity = hi.shares                                                                                                                                     ' QUANTITY IS SET AT 100 (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+
+                    Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                    Thread.Sleep(3000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                    ' ***** CHECK IF STOCKTICKPRICE IS 0, IF IT IS THEN USE THE PRIMEBUY VALUE SUBMITTED BY THE USER                                                                    ' BUILD FUNCTIONALITY TO PULL THE CLOSING PRICE FOR ALL PRODUCTS IN THE INDEX WITH PULL FLAG SET TO YES
+                    If Tws1.StockTickPrice <= 0 Then
+                        Tws1.StockTickPrice = primebuy
+                        'datastring = datastring & " " & String.Format("{0:C}", Tws1.StockTickPrice) & "  " & " Exit Early No TWS Price"
+                        'Tws1.cancelMktData(1)
+
+                        'Call Tws1.disconnect()
+
+                        'Return Content(datastring)
+
+                        'Exit Function
+
+                    End If
+
+                    If Tws1.StockTickPrice > 0 Then                                                                                                                                     ' VERIFICATION THE THE STOCK TICK PRICE PULLED IS GREATER THAN 0 IN ORDER TO DETERMINE THE MARK
+
+                        ' Calculate the nearest MARK point based on the current stock price and triggers that have been set. 
+                        priceint = Int(Tws1.StockTickPrice)                                                                                                                             ' RETURN THE INTERVAL OF THE STOCK TICK PRICE
+                        checksum = Tws1.StockTickPrice - priceint                                                                                                                       ' RETURN THE DECIMALS IN THE STOCK TICK PRICE FOR THE CALCULATIONS
+                        checkprice = (Int(checksum / hi.opentrigger) * hi.opentrigger + priceint)                                                                                                   ' CALCULATE THE NEAREST MARK PRICE TO SET THE LIMIT ORDER AGAINST
+
+                        order.LmtPrice = checkprice                                                                                                                                     ' LIMIT PRICE SET AT THE PRIME THE PUMP ENTRY AMOUNT
+
+                        Call Tws1.placeOrderEx(rnd, contract, order)                                                                                                                    ' CALL API FUNCTION TO PLACE THE ORDER
+                        Thread.Sleep(1000)                                                                                                                                              ' DELAY TIMER OF 1 SECOND
+
+                        Dim newStockOrder As New stockorder                                                                                                                             ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                        TryUpdateModel(newStockOrder)                                                                                                                                   ' TEST CONNECTION TO DATABASE TABLES.
+                        Dim newindex As New stockorder With {
+                                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                    .OrderId = rnd,
+                                                    .Symbol = contract.Symbol.ToUpper(),
+                                                    .Action = order.Action,
+                                                    .TickPrice = Tws1.StockTickPrice,
+                                                    .LimitPrice = order.LmtPrice,
+                                                    .Status = Tws1.Status,
+                                                    .Quantity = order.TotalQuantity,
+                                                    .OrderStatus = "Open",
+                                                    .roboIndex = robotindex,
+                                                    .matchID = rnd,
+                                                    .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                }                                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                        db.stockorders.InsertOnSubmit(newindex)                                                                                                                         ' INSERT THE NEW RECORD TO BE ADDED.
+                        db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
+
+                        'Tws1.reqMarketDataType(3)                                                                                                                                       ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                        'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                              ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                        'Thread.Sleep(1000)                                                                                                                                              ' DELAY TIMER OF 1 SECOND
+
+                        Call Tws1.reqAllOpenOrders()                                                                                                                                    ' API FUNCTION CALL TO GET ALL OPEN ORDERS FROM TWS
+                        Thread.Sleep(1000)                                                                                                                                              ' DELAY TIMER OF 1 SECOND
+
+                        Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                           ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
+
+                        For Each item In Tws1.OpenOrderList                                                                                                                             ' CYCLE THROUGH THE CURRENT OPEN ORDERS IN TWS
+                            Dim itemExist As Boolean = Tws1.OpenOrderList.Any(Function(x) x.OId = rnd)                                                                                  ' QUERY TO SEARCH LIST TO DETERMINE IF ORDER IN TABLE EXISTS IN TWS LIST
+                            If itemExist = False Then                                                                                                                                   ' IF THERE IS AN ORDER AND IT TRIGGERS FALSE THERE IS AN ERROR THAT HAS OCCURRED
+                                datastring = datastring & " An Error has occured with the Order."                                                                                       ' UPDATE THE DATASTRING
+                            Else
+                                Dim ou = db.pullstockorder(rnd, item.OAction, item.LmtPrice)                                                                                                           ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+                                ou.PermID = item.PermId                                                                                                                                 ' UPDATE PERMID
+                                ou.TickPrice = Tws1.StockTickPrice                                                                                                                      ' UPDATE TICKPRICE
+                                db.SubmitChanges()                                                                                                                                      ' SAVE CHANGES TO THE DATABASE
+                            End If
+                        Next
+                        datastring = datastring & " Order added " & Tws1.OrderID & " " & symbol & " " & String.Format("{0:C}", order.LmtPrice)                                          ' UPDATE DATASTRING TO DISPLAY SUCCESSFUL INITIAL ORDER PLACED TO THE VIEW
+                    Else
+                        datastring = datastring & " Stock Price Error."                                                                                                                 ' UPDATE DATASTRING TO DISPLAY SUCCESSFUL INITIAL ORDER PLACED TO THE VIEW
+                    End If
+
+                Else                                                                                                                                                                    ' POSITIONS EXIST IN THE TABLE FOR THE PRODUCT AND INDEX SELECTED
+
+                    ' Contract & Order variales that will remain constant 
+                    contract.Currency = "USD"                                                                                                                                           ' SET CURRENCY TO US DOLLARS (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    contract.Exchange = "SMART"                                                                                                                                         ' SET ROUTING EXCHANGE TO SMART  (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.OrderType = "LMT"                                                                                                                                             ' ORDER IS A LIMIT ORDER AND NOT A MARKET ORDER (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.Tif = "GTC"                                                                                                                                                   ' ORDER DURATION IS GOOD TIL CANCELLED (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+
+                    contract.SecType = "STK"                                                                                                                                            ' SET THE SECRUTIY TYPE TO STOCK (STK, OPT, CASH) (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    contract.Symbol = symbol.ToUpper()                                                                                                                                  ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                    order.OrderId = rnd                                                                                                                                                 ' SET THE ORDERID TO BE AT LEAST 1 NUMBER HIGHER THAN ANY ORDERS PLACED
+                    order.Action = "BUY"                                                                                                                                                ' SET ACTION TO BUY. 
+                    order.TotalQuantity = hi.shares                                                                                                                                     ' QUANTITY IS SET AT 100 (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+
+                    ' ***** THERE ARE ORDERS IN THE DATABASE FOR THIS PRODUCT *****
+                    Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                    ' ***** CHECK IF STOCKTICKPRICE IS 0, IF IT IS THEN USE THE PRIMEBUY VALUE SUBMITTED BY THE USER                                                                    ' BUILD FUNCTIONALITY TO PULL THE CLOSING PRICE FOR ALL PRODUCTS IN THE INDEX WITH PULL FLAG SET TO YES
+                    If Tws1.StockTickPrice <= 0 Then                                                                                                                                    ' CHECK THE STOCKTICKPRICE AND IF NOT CONNECTED OR SET TO ZERO USE PRIMEBUY PRICE
+                        Tws1.StockTickPrice = CDbl(primebuy)                                                                                                                            ' SET STOCKTICKPRICE EQUAL TO PRIMEBUY ENTERED PRICE
+                    End If
+                    ' 6. Check to make sure order in table is still open in TWS. (Only the Buy order being filled in this process)
+
+                    For Each Item In orderlist                                                                                                                                          ' LOOP FOR EACH ORDER IN THE ORDER TABLE OF THE DATABASE THAT HAS THIS INDEX VALUE AND IS OPEN
+                        matchID = Item.matchID                                                                                                                                          ' USED TO SET THE MATCHING ID IF ANOTHER ORDER IS ADDED TO THE TABLE (TO MATCH A BUY & SELL ORDER)
+
+                        Dim itemExist As Boolean = Tws1.OpenOrderList.Any(Function(x) x.Symbol = Item.Symbol And x.LmtPrice = Item.LimitPrice)                                          ' QUERY TO SEARCH LIST TO DETERMINE IF ORDER IN TABLE EXISTS IN TWS LIST
+                        If itemExist = False Then                                                                                                                                       ' ORDER WAS FILLED, PROCESS NEXT STEPS FOLLOWING THAT FILL
+
+                            ' 0. Set the variables for the next steps.  
+                            ' 0.1 If the order filled was a buy order Then add a sell order the width higher and add another buy order the width below 
+                            ' 0.2 If the order filled was a sell order then add a buy order the width below.
+                            Dim filledtype As String = Item.Action.ToUpper()                                                                                                            ' BASED ON THE ORDER FILLED THIS WILL BE USED TO DETERMINE STEPS IN SENDING NEXT ORDERS TO TWS
+
+                            ' ***** BUY ORDER WAS FILLED CODE HERE *****
+                            ' Determine whether an order was filled by checking if there is a matching order in TWS with what is in the database.
+                            ' If the action of the filled order was BUY then log all information in the database and place a SELL order the hi.width above 
+                            ' and place a new BUY order below at the hi.width
+                            ' If the action of the filled order was SELL: log all information in the database and place a BUY order the hi.width below the filled SELL order
+                            ' Remove any stranded order(s) below the new BUY order.
+
+                            '1 Code handling buy order that was filled
+                            If filledtype.ToUpper = "BUY" Then                                                                                                                          ' ORDER FILLED WAS A BUY ORDER - SEND A SELL & BUY ORDER AND ADD THE ORDERID TO THE DB
+
+                                ' 1a Update the record matching the filled order in the database 
+                                Dim so = db.getstockorder(Item.PermID, Item.Action)                                                                                                     ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
+                                so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                               ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
+                                so.Status = "Filled"                                                                                                                                    ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
+                                so.OrderStatus = "Closed"                                                                                                                               ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
+                                db.SubmitChanges()                                                                                                                                      ' SUBMIT CHANGES TO THE DATABASE
+
+                                ' 1b. Add the position to the position table                                                                                                
+                                Dim posExists As Boolean = db.stockposExists(symbol)                                                                                                    ' BECAUSE THERE HAS BEEN AN ORDER FILLED DETERMINE IF A POSITION EXISTS FOR THE PRODUCT 
+
+                                If posExists = True Then                                                                                                                                ' IF THE POSITION EXISTS
+                                    Dim sp = db.getposition(symbol)                                                                                                                     ' GET THE POSITION TO UPDATE
+                                    sp.lasttimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                            ' UPDATE POSITION TIME STAMP
+                                    sp.qty = sp.qty + hi.shares                                                                                                                               ' INCREMENT OR DECREMENT THE QUANTITY BASED ON THE TYPE OF ORDER FILLED
+                                    db.SubmitChanges()                                                                                                                                  ' SUBMIT THE EDITS TO THE DATABASE
+                                Else
+                                    Dim newStockPosition As New position                                                                                                                ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                                    TryUpdateModel(newStockPosition)                                                                                                                    ' TEST CONNECTION TO DATABASE TABLES.
+                                    Dim newPosition As New position With {
+                                                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                    .lasttimestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                    .symbol = symbol.ToUpper(),
+                                                                    .qty = Item.Quantity
+                                                                }                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                                    db.positions.InsertOnSubmit(newPosition)                                                                                                            ' INSERT THE NEW RECORD TO BE ADDED.
+                                    db.SubmitChanges()                                                                                                                                  ' SUBMIT THE CHANGES TO THE TABLE.
+                                End If
+
+                                ' 1c. Send a Sell to Close order to TWS & Log orders in the orders database table
+
+                                ' 1c. Set the contract details for the orders
+                                contract.Symbol = symbol.ToUpper()                                                                                                                      ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON
+                                contract.SecType = "STK"                                                                                                                                ' SET THE SECURITY TYPE TO STOCK
+                                contract.Currency = "USD"                                                                                                                               ' SET THE CURRENCY TO US DOLLARS
+                                contract.Exchange = "SMART"                                                                                                                             ' SET THE ROUTING FOR THE ORDER
+
+                                ' 1d. Set the order details for the orders
+                                order.OrderType = "LMT"                                                                                                                                 ' SET THE ORDERTYPE TO A LIMIT ORDER
+                                order.Tif = "GTC"                                                                                                                                       ' SET ORDER EXPIRATION TO GOOD TIL CANCELLED
+                                order.TotalQuantity = 100                                                                                                                               ' SET THE ORDER QUANTITY
+                                order.OrderId = rnd                                                                                                                                     ' SET THE ORDER ID 
+
+                                ' 1e. Set the sell order element & limitprice
+                                order.Action = "Sell"                                                                                                                                   ' SET THE ORDER ACTION TO SELL
+                                order.LmtPrice = Item.LimitPrice + hi.width                                                                                                             ' ADD THE WIDTH TO THE PRICE ***** WILL NEED TO FIGURE OUT COMMISSION COSTS AND ADD IN *****
+
+                                ' 1f. Place the sell order
+                                Call Tws1.placeOrderEx(rnd, contract, order)                                                                                                            ' API FUNCTION TO PLACE THE ORDER
+                                Thread.Sleep(5000)                                                                                                                                      ' ONE SECOND DELAY TIMER
+
+                                ' 1g. Record the SELL order in the database
+                                Dim newStockOrder As New stockorder                                                                                                                     ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                                TryUpdateModel(newStockOrder)                                                                                                                           ' TEST CONNECTION TO DATABASE TABLES.
+                                Dim newindex As New stockorder With {
+                                                            .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                            .OrderId = rnd,
+                                                            .Symbol = contract.Symbol.ToUpper(),
+                                                            .Action = "SELL",
+                                                            .TickPrice = Tws1.StockTickPrice,
+                                                            .LimitPrice = order.LmtPrice,
+                                                            .Status = Tws1.Status,
+                                                            .Quantity = order.TotalQuantity,
+                                                            .OrderStatus = "Open",
+                                                            .roboIndex = robotindex,
+                                                            .matchID = matchID,
+                                                            .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                        }                                                                                                                               ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                                db.stockorders.InsertOnSubmit(newindex)                                                                                                                 ' INSERT THE NEW RECORD TO BE ADDED.
+                                db.SubmitChanges()                                                                                                                                      ' SUBMIT THE CHANGES TO THE TABLE.
+
+                                ' 1h. Get the stocktickprice & ID information to update the order in the table
+                                'Tws1.reqMarketDataType(3)                                                                                                                              ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                                'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                     ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                                'Thread.Sleep(1000)                                                                                                                                     ' DELAY TIMER OF 1 SECOND
+
+                                Call Tws1.reqAllOpenOrders()                                                                                                                            ' API FUNCTION CALL TO GET ALL OPEN ORDERS FROM TWS
+                                Thread.Sleep(1000)                                                                                                                                      ' DELAY TIMER OF 1 SECOND
+
+                                Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                   ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
+
+                                ' 1i. Update the order in the table
+                                Dim ou = db.pullstockorder(rnd, "SELL", order.LmtPrice)                                                                                                                 ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+                                ou.PermID = Item.PermID                                                                                                                                 ' UPDATE PERMID
+                                ou.TickPrice = Tws1.StockTickPrice                                                                                                                      ' UPDATE TICKPRICE
+                                db.SubmitChanges()                                                                                                                                      ' SAVE CHANGES TO THE DATABASE
+
+
+                                ' 1j. Set the order details for the additional buy order at the level below the filled order                                
+                                order.Action = "BUY"                                                                                                                                    ' SET THE ORDER ACTION TO SELL
+                                order.LmtPrice = Item.LimitPrice - hi.width                                                                                                                ' ADD THE WIDTH TO THE PRICE ***** WILL NEED TO FIGURE OUT COMMISSION COSTS AND ADD IN *****
+
+                                ' 1k. Place the sell order
+                                Call Tws1.placeOrderEx(rnd + 1, contract, order)                                                                                                        ' API FUNCTION TO PLACE THE ORDER
+                                Thread.Sleep(1000)                                                                                                                                      ' ONE SECOND DELAY TIMER
+
+                                ' 1l. Record the BUY order in the database
+                                Dim newStockOrder2 As New stockorder                                                                                                                         ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                                TryUpdateModel(newStockOrder)                                                                                                                               ' TEST CONNECTION TO DATABASE TABLES.
+                                Dim newindex2 As New stockorder With {
+                                                                .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                .OrderId = rnd,
+                                                                .Symbol = contract.Symbol.ToUpper(),
+                                                                .Action = "BUY",
+                                                                .TickPrice = Tws1.StockTickPrice,
+                                                                .LimitPrice = order.LmtPrice,
+                                                                .Status = Tws1.Status,
+                                                                .Quantity = order.TotalQuantity,
+                                                                .OrderStatus = "Open",
+                                                                .roboIndex = robotindex,
+                                                                .matchID = order.OrderId,
+                                                                .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                            }                                                                                                                                   ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                                db.stockorders.InsertOnSubmit(newindex2)                                                                                                                         ' INSERT THE NEW RECORD TO BE ADDED.
+                                db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
+
+                                ' 1m. Get the stocktickprice & ID information to update the order in the table
+                                'Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                                'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                                'Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                                Call Tws1.reqAllOpenOrders()                                                                                                                                        ' API FUNCTION CALL TO GET ALL OPEN ORDERS FROM TWS
+                                Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                                Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                               ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
+
+                                ' 1n. Update the order in the table
+                                ou = db.pullstockorder(rnd, "BUY", order.LmtPrice)                                                                                                          ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+                                ou.PermID = order.PermId                                                                                                                                     ' UPDATE PERMID
+                                ou.TickPrice = Tws1.StockTickPrice                                                                                                                          ' UPDATE TICKPRICE
+                                db.SubmitChanges()                                                                                                                                          ' SAVE CHANGES TO THE DATABASE
+
+
+                                ' ***** EVERYTHING ABOVE THIS LINE WORKS AS DESIRED AS OF JAN 28, 2018 *****
+
+
+                            Else                                                                                                                                                        ' ORDER FILLED WAS A SELL ORDER - SEND A BUY ORDER FOR THE WIDTH UNDER FILLED PRICE
+
+                                ' ***** THE CODE HERE HANDLES A SELL ORDER THAT WAS FILLED - IT RECORDS THAT FILLED ORDER, 
+                                ' UPDATES THE POSITIONS TABLE, ADDS A New  BUY ORDER BELOW THE FILLED SELL ORDER And REMOVES ANY STRANDED ORDERS BELOW THE New MARK *****
+
+                                ' 2. If the filled order was a SELL order log the data in the database, add a new BUY order to re-establish a position and
+                                '    remove any stranded orders below the New BUY order. Update all tables.
+
+
+                                ' 2a Update the record matching the filled order in the database 
+                                Dim so = db.getstockorder(Item.PermID, Item.Action)                                                                                                     ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
+                                so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                               ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
+                                so.Status = "Filled"                                                                                                                                    ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
+                                so.OrderStatus = "Closed"                                                                                                                               ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
+                                db.SubmitChanges()
+
+                                ' 2b. Add the position to the position table                                                                                                
+                                Dim posExists As Boolean = db.stockposExists(symbol)                                                                                                    ' BECAUSE THERE HAS BEEN AN ORDER FILLED DETERMINE IF A POSITION EXISTS FOR THE PRODUCT 
+
+                                If posExists = True Then                                                                                                                                ' IF THE POSITION EXISTS
+                                    Dim sp = db.getposition(symbol)                                                                                                                     ' GET THE POSITION TO UPDATE
+                                    sp.lasttimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                            ' UPDATE POSITION TIME STAMP
+                                    sp.qty = sp.qty - hi.shares                                                                                                                               ' INCREMENT OR DECREMENT THE QUANTITY BASED ON THE TYPE OF ORDER FILLED
+                                    db.SubmitChanges()                                                                                                                                  ' SUBMIT THE EDITS TO THE DATABASE
+                                Else
+                                    Dim newStockPosition As New position                                                                                                                ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                                    TryUpdateModel(newStockPosition)                                                                                                                    ' TEST CONNECTION TO DATABASE TABLES.
+                                    Dim newPosition As New position With {
+                                                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                    .lasttimestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                    .symbol = symbol.ToUpper(),
+                                                                    .qty = Item.Quantity
+                                                                }                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                                    db.positions.InsertOnSubmit(newPosition)                                                                                                                ' INSERT THE NEW RECORD TO BE ADDED.
+                                    db.SubmitChanges()                                                                                                                                      ' SUBMIT THE CHANGES TO THE TABLE.
+                                End If
+
+                                'Stop
+
+                                ' 2c. Send a Sell to Close order to TWS & Log orders in the orders database table                                
+                                contract.Symbol = symbol.ToUpper()                                                                                                                      ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON
+                                contract.SecType = "STK"                                                                                                                                ' SET THE SECURITY TYPE TO STOCK
+                                contract.Currency = "USD"                                                                                                                               ' SET THE CURRENCY TO US DOLLARS
+                                contract.Exchange = "SMART"                                                                                                                             ' SET THE ROUTING FOR THE ORDER
+
+                                ' 2d. Set the order details for the orders
+                                order.OrderType = "LMT"                                                                                                                                 ' SET THE ORDERTYPE TO A LIMIT ORDER
+                                order.Tif = "GTC"                                                                                                                                       ' SET ORDER EXPIRATION TO GOOD TIL CANCELLED
+                                order.TotalQuantity = hi.shares                                                                                                                               ' SET THE ORDER QUANTITY
+                                order.OrderId = rnd                                                                                                                                     ' SET THE ORDER ID 
+
+                                order.Action = "BUY"                                                                                                                                    ' SET THE ORDER ACTION TO SELL
+                                order.LmtPrice = Item.LimitPrice - hi.width                                                                                                             ' ADD THE WIDTH TO THE PRICE ***** WILL NEED TO FIGURE OUT COMMISSION COSTS AND ADD IN *****
+
+                                ' 2e. Place the new BUY order
+                                Call Tws1.placeOrderEx(rnd, contract, order)                                                                                                            ' API FUNCTION TO PLACE THE ORDER
+                                Thread.Sleep(1000)                                                                                                                                      ' ONE SECOND DELAY TIMER
+
+                                ' 2f. Record the BUY order in the database
+                                Dim newStockOrder As New stockorder                                                                                                                     ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                                TryUpdateModel(newStockOrder)                                                                                                                           ' TEST CONNECTION TO DATABASE TABLES.
+                                Dim newindex As New stockorder With {
+                                                                .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                                .OrderId = rnd,
+                                                                .Symbol = contract.Symbol.ToUpper(),
+                                                                .Action = "BUY",
+                                                                .TickPrice = Tws1.StockTickPrice,
+                                                                .LimitPrice = order.LmtPrice,
+                                                                .Status = Tws1.Status,
+                                                                .Quantity = order.TotalQuantity,
+                                                                .OrderStatus = "Open",
+                                                                .roboIndex = robotindex,
+                                                                .matchID = order.OrderId,
+                                                                .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                            }                                                                                                                           ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                                db.stockorders.InsertOnSubmit(newindex)                                                                                                                 ' INSERT THE NEW RECORD TO BE ADDED.
+                                db.SubmitChanges()                                                                                                                                      ' SUBMIT THE CHANGES TO THE TABLE.
+
+                                ' 2g. Get the stocktickprice & ID information to update the order in the table
+                                'Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                                'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                                'Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                                Call Tws1.reqOpenOrders()                                                                                                                                        ' API FUNCTION CALL TO GET ALL OPEN ORDERS FROM TWS
+                                Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
+
+                                Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                                ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
+                                ' ***** Need to figure out how to get the PERMid as it did not populate on the buy order submission here - check the buy order code above
+
+                                For Each openOrders In Tws1.OpenOrderList
+                                    If openOrders.OId = rnd Then
+                                        order.PermId = openOrders.PermId
+                                    End If
+                                Next
+
+                                ' 2h. Record the BUY order in the database
+                                Dim ou = db.pullstockorder(rnd, "BUY", order.LmtPrice)                                                                                                          ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+                                'MsgBox(order.PermId)
+                                ou.PermID = order.PermId                                                                                                                                     ' UPDATE PERMID
+                                ou.TickPrice = Tws1.StockTickPrice                                                                                                                          ' UPDATE TICKPRICE
+                                db.SubmitChanges()                                                                                                                                          ' SAVE CHANGES TO THE DATABASE
+
+                                ' CANCEL ANY ORDERS THAT ARE OPEN BELOW THE NRE BUY ORDER PLACED SINCE THE SELL ORDER WAS FILLED                                
+
+                                datastring = datastring & order.PermId & " " & String.Format("{0:C}", Tws1.StockTickPrice) & " BUY submitted, Remove Stranded Orders"                                 '***** Change to be more descriptive *****
+
+                            End If
+
+                            datastring = datastring & " " & String.Format("{0:C}", Tws1.StockTickPrice) & "  " & " order filled. New order submitted"                                 '***** Change to be more descriptive *****
+
+                        Else
+                            ' ***** ORDER(S) NOT FILLED CODE HERE *****
+                            ' Check if there is a permid and OrderId for the order
+                            ' 1. Get current stocktickprice
+
+                            contract.Symbol = symbol.ToUpper()                                                                                                                              ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                            contract.SecType = "STK"                                                                                                                                        ' SET THE SECRUTIY TYPE TO STOCK (STK, OPT, CASH) (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                            contract.Currency = "USD"                                                                                                                                       ' SET CURRENCY TO US DOLLARS (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+                            contract.Exchange = "SMART"                                                                                                                                     ' SET ROUTING EXCHANGE TO SMART  (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
+
+                            'Tws1.reqMarketDataType(3)                                                                                                                                       ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                            'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                              ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                            'Thread.Sleep(1000)                                                                                                                                              ' DELAY TIMER OF 1 SECOND
+
+                            datastring = datastring & " " & String.Format("{0:C}", Tws1.StockTickPrice) & "  " & Tws1.OpenOrderList.Count() & " order(s) still open. "                      '***** Change to be more descriptive *****
+                        End If
+                    Next
+
+                End If
+
+            End Using
+
+            Tws1.cancelMktData(1)
+
+            Call Tws1.disconnect()
+
+            datastring = datastring & " " & String.Format("{0:hh:mm:ss}", Now.ToLocalTime)
+
+            Return Content(datastring)
+
+
+
+            'OLD CODE AFTER THIS POINT
+
+
+
+
+
+
+            'For Each item In Tws1.OpenOrderList
+            'If item.Symbol = symbol Then
+            '    ' This happens when there are more than one order for the symbol to close
+            '    If db.stockorderExists(item.PermId, item.OAction) = True Then
+            '        'datastring = datastring & " Order Exists " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice
+            '        MsgBox("exists")
+            '    Else
+            '        'datastring = datastring & " Order Filled " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice & "  *****"
+            '        MsgBox("absent")
+            '    End If
+            'Else
+
+            '    
+            '    Stop
+            '    'so.PermID = item.PermId
+            '    'db.SubmitChanges()
+
+
+            '    contract.Symbol = symbol.ToUpper()                                                                                                                                      ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON
+            '    contract.SecType = "STK"
+            '    contract.Currency = "USD"
+            '    contract.Exchange = "SMART"
+
+            '    ' No Orders exist that match the symbol at all happens when there was 1 order that filled for that symbol.
+            '    ' Steps when this happens
+            '    
+            '    ' 2. Add the position created to the position table
+            '    ' 3. Send an opposite order to TWS 
+            '    ' 4. Log that order in the orders table 
+            '    MsgBox("No Order in TWS matching database order for " & symbol)
+            'End If
+
+
+
+            'Next
+
+
+
+
+
+            'Stop
+
+
+
+
+
+            ' CLOSE THE DATA CONTEXT FOR THE DATABSE. 
+
+
+
+
+            'Tws1.reqMarketDataType(3)                                                                                                                                               ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+            'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                      ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+            'Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECOND
+
+            'If Tws1.OpenOrderList.Count() = 0 Then                                                                                                                                      ' DETERMINE IF THERE ARE ANY EXISTING ORDERS THAT ARE OPEN - THIS WILL SET THE INITIAL MARK 
+
+
+            '    'Tws1.StockTickPrice = 1.85                                      ' DELETE DURING DAYTIME - FOR TEST PURPOSES ONLY!
+            '    If Tws1.StockTickPrice > 0 Then
+            '        checksum = Tws1.StockTickPrice - Int(Tws1.StockTickPrice)                                                                                                           ' SET CHECKSUM EQUAL TO THE CENTS OF THE STOCK TICK PRICE TO DETERMINE ORDER LEVEL
+            '        order.OrderId = CInt(rnd)
+            '        order.Action = "BUY"
+            '        order.OrderType = "LMT"
+            '        order.Tif = "GTC"
+            '        order.TotalQuantity = 100
+
+            '        ' *********************************************************************************
+            '        ' THIS IS CURRENTLY SET UP FOR QUARTERS NEED TO WORK OUT THE MATH ALGO TO READ FROM THE CONTROL CARD.
+            '        '
+            '        ' POSSIBLE SOLUTION NEED TO VALIDATE THE MATH IN EXCEL.
+            '        ' TAKE CURRENT DECIMAL VALUE eg. .24 AND DIVIDE BY THE TRIGGER VALUE eg. .05  TAKE THE INTEGER OF THAT RESULT AND MULTIPLY IT BY THE TRIGGER VALUE
+            '        ' EXAMPLE:  .24 / .05 = 4.8 | INTEGER VALUE IS 4 * .05 = .20 AS THE TRIGGER TO BUY
+            '        ' ******* validated in excel 1/17/18  This will replace all the If thens below.
+            '        ' *********************************************************************************
+
+            '        If checksum > 0.75 And checksum < 0.99 Then
+            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.75 '- (rowid * width)
+            '        ElseIf checksum > 0.5 And checksum < 0.76 Then
+            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.5 ' - (rowid * width)
+            '        ElseIf checksum > 0.25 And checksum < 0.51 Then
+            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.25 '- (rowid * width)
+            '        Else
+            '            order.LmtPrice = Int(Tws1.StockTickPrice) + .00 '- (rowid * width)
+            '        End If
+
+            '        Call Tws1.placeOrderEx(rnd, contract, order)
+            '        Thread.Sleep(1000)
+            '        'Stop
+            '        'MsgBox(contract.Symbol & " " & order.OrderId)
+
+            '        Using db As New wavesDataContext                                                                                                                                    ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+            '            'Dim userid = db.GetUserIdForUserName("csquared20")                                                                                                             ' GET THE USERID FROM USERNAME. (THIS WILL HAVE TO BE EDITED WHEN SECURITY IS INSTALLED.)
+
+            '            Dim newStockOrder As New stockorder                                                                                                                        ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+            '            TryUpdateModel(newStockOrder)                                                                                                                                   ' TEST CONNECTION TO DATABASE TABLES.
+            '            Dim newindex As New stockorder With {
+            '                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+            '                                    .OrderId = order.OrderId,
+            '                                    .Symbol = contract.Symbol.ToUpper(),
+            '                                    .Action = order.Action,
+            '                                    .TickPrice = Tws1.StockTickPrice,
+            '                                    .LimitPrice = order.LmtPrice,
+            '                                    .Status = Tws1.Status,
+            '                                    .Quantity = order.TotalQuantity,
+            '                                    .OrderStatus = "Open",
+            '                                    .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+            '                                }                                                                                                                                           ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+            '            db.stockorders.InsertOnSubmit(newindex)                                                                                                                      ' INSERT THE NEW RECORD TO BE ADDED.
+            '            db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
+
+            '        End Using
+
+
+
+
+
+            '        datastring = datastring & " Stock Price: " & Tws1.StockTickPrice & " No Open Orders Sending Order: " &
+            '            String.Format("{0:C}", order.LmtPrice) & " | " & String.Format("{0:0.00}", checksum)                                                                            ' COMPILE THE DATASTRING INDICAITNG THE TRANSACTION OCCURRING
+            '    Else                                                                                                                                                                    ' STOCK TICK PRICE RECEIVED WAS 0.00 (ERROR) SO DO NOT PROCESS ANYTHING
+            '        datastring = datastring                                                                                                                                             ' NO CHANGE IN THE DATASTRING BECAUSE OF THE ERROR
+            '    End If
+
+
+            'Else                                                                                                                                                                        ' IF ORDERS ARE PRESENT PROCESS THE STEPS BELOW
+
+            '    ' Check to see if there are any orders for the symbol entered or pulled from the Control Card
+            '    ' Update the PermId for any New order submitted - COMPLETE
+            '    ' Check to see if that order was filled and update the Buy Action Record
+            '    ' Add new record to Positions table if it does not exist Update (Increment counts) if it does (Single record of positions for stock and hedge per product)
+            '    ' If Buy Order is filled submit Sell Order and Add Sell Order to Orders Table
+            '    ' Update Perm Id for Sell order 
+            '    ' If Sell order is filled submit Buy order and add it to the orders table
+            '    ' Decrement the count in the Positions Table
+            '    ' Repeat
+            '    Tws1.reqMarketDataType(3)                                                                                                                                               ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+            '    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                      ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+            '    Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECONDS
+            '    'Tws1.StockTickPrice = 1.85                                      ' DELETE DURING DAYTIME - FOR TEST PURPOSES ONLY!
+
+            '    For Each item In Tws1.OpenOrderList
+            '        Using db As New wavesDataContext
+
+            '            If db.stockorderExists(item.OId, item.OAction) = True Then
+            '                datastring = datastring & " Order Exists " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice
+            '            Else
+            '                datastring = datastring & " Order Filled " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice & "  *****"
+            '            End If
+
+
+
+            '        End Using
+
+
+            '        'datastring = datastring & " " & item.OId & "-" & item.Symbol & " " & item.Status
+            '    Next
+            'End If
+
+
+
+
+            ''Call Tws1.reqAllOpenOrders()
+            ''For Each OpenOrders In Tws1.OpenOrderList
+
+            ''    'MsgBox(OpenOrders.PermId & " : " & OpenOrders.Symbol)
+            ''    datastring += " Order Id: " & OpenOrders.PermId & " Symbol: " & OpenOrders.Status & "<br/>"
+            ''Next
+
+            ''If Tws1.StockTickPrice <> 0 Then
+
+            ''If Tws1.StockTickPrice <= 28 Then
+
+            ''Dim rnd As Integer = RandomGenerator() * 0.0001
+            ''If rnd < 0 Then
+            ''    rnd = rnd * -1
+            ''End If
+
+            ''Dim contract As IBApi.Contract = New IBApi.Contract()
+            ''contract.Symbol = symbol.ToUpper()
+            ''contract.SecType = "STK"
+            ''contract.Currency = "USD"
+            ''contract.Exchange = "SMART"
+
+
+            ''rnd = Mid(Year(Now()), 3, 2) & Month(Now()) & Day(Now()) & (rowid + 1)             ' TEST to see is this works - may want to comment it out once verified adding year works
+
+            ''order.OrderId = CInt(rnd)
+            ''order.Action = "BUY"
+            ''order.OrderType = "LMT"
+            ''order.Tif = "GTC"
+            ''order.LmtPrice = 1.75 '- (rowid * width)
+            ''order.TotalQuantity = 100
+
+
+
+            ''Call Tws1.reqAllOpenOrders()
+            ''For Each OpenOrders In Tws1.OpenOrderList
+
+            ''MsgBox(OpenOrders.Symbol & " " & OpenOrders.LmtPrice & " " & OpenOrders.Status & " : " & Tws1.Status)
+
+            ''Next
+
+            '''''''''''Call Tws1.placeOrderEx(rnd, contract, order)
+            '''''''''''Thread.Sleep(10000)
+
+            '''''''''''datastring = datastring & contract.Symbol & " : " & (String.Format("{0:C}", Tws1.StockTickPrice)) & " Order Id:" & order.OrderId &
+            '''''''''''    " Total Shares: " & order.TotalQuantity & " Price: " & (String.Format("{0:C}", order.LmtPrice)) & " Order Status: " & Tws1.Status & " - "
+
+            ''Else
+            ''   datastring = datastring & contract.Symbol & " : " & Tws1.StockTickPrice
+            ''End If
+
+            '' Else
+            ''datastring = datastring & contract.Symbol & " : Error"
+            ''End If
+
+            'Call Tws1.reqAllOpenOrders()
+            'For Each OpenOrders In Tws1.OpenOrderList
+
+            '    If OpenOrders.OId = order.OrderId Then
+            '        datastring = datastring & "C"
+
+            '    End If
+
+            'Next
+
+
+
+        End Function                                                                                                                                                                                                                    ' ROBOT MAIN FUNCTION
+
+        Function sandbox(ByVal sanddata As Integer) As ActionResult
+
+            Dim connected As String = ""                                                                                                                                                ' HOLDS THE TWS CONNECTION STATUS VALUE
+            Dim datastring As String = DateTime.Parse(Now()).ToShortTimeString() & " "                                                                                                  ' STRING USED TO PASS STATUS DETAIL FROM THE FUNCTION TO THE VIEW
+            Dim contract As IBApi.Contract = New IBApi.Contract()                                                                                                                       ' ESTABLISH A NEW CONTRACT CLASS
+            Dim order As IBApi.Order = New IBApi.Order()                                                                                                                                ' eSTABLISH A NEW ORDER CLASS
+
+            connected = TWSconnect()                                                                                                                                                    ' CALLED FUNCTION TO CONNECT API TO TWS
+
+            ' TESTING:  ORDER PLACEMENT & ORDER STATUS DETAIL
+
+            'MsgBox(Tws1.OrderID)
+
+            'Stop
+
+            contract.Symbol = "RIG"                                                                                                                                                     ' INITIALIZE SYMBOL VALUE FOR THE CONTRACT
+            contract.SecType = "STK"                                                                                                                                                    ' INITIALIZE THE SECURITY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+            contract.Currency = "USD"                                                                                                                                                   ' INITIALIZE CURRENCY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+            contract.Exchange = "SMART"                                                                                                                                                 ' INITIALIZE EXCHANGE USED FOR THE CONTRACT
+
+            order.OrderId = sanddata                                      ' ***** set this up in a table so I manage it versus the TWS API *****    INITIALIZE THE ORDERID ONE MORE THAN THE CURRENT ORDER ID IN TWS
+            'Stop
+            order.Action = "BUY"                                                                                                                                                        ' INITIALIZE ACTION IN THE ORDER
+            order.OrderType = "LMT"                                                                                                                                                     ' INITIALIZE THE ORDER TYPE IN THE ORDER - MOVE TO SETTINGS AT SOME POINT
+            order.LmtPrice = 2.0                                                                                                                                                        ' INITIALIZE THE PRICE IN THE ORDER
+            order.TotalQuantity = 100                                                                                                                                                   ' INITIALIZE THE ORDER QUANTITY IN THE ORDER - MOVE TO SETTINGS AT SOME POINT 
+
+            ' WORK TO BUILD A ROUTINE THAT WILL INCREASE QUANTITY BASED ON THE SUCCESS OF THE STRATEGY - THIS WOULD RESIDE IN SETTINGS BUT NEED LOGIC AND WORKFLOW TO BUILD IT OUT
+
+            Call Tws1.placeOrderEx(order.OrderId, contract, order)                                                                                                                      ' CALLED FUNCTION TO PLACE THE ORDER IN TWS
+            Thread.Sleep(1000)                                                                                                                                                          ' DELAY THREAD OF 1 SECOND
+            Tws1.disconnect()
+
+
+            ' THERE IS AN ERROR THAT OCCURS HERE WHEN THERE ARE NO ORDERS IN TWS
+            Dim currentorder As OrderStatusMessage = Tws1.listOrderStatus.SingleOrDefault(Function(x) x.OrderID = order.OrderId)                                                        ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST AND PLACE RESULT IN A NEW LIST
+
+            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                Dim newStockOrder As New stockorder                                                                                                                             ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                TryUpdateModel(newStockOrder)                                                                                                                                   ' TEST CONNECTION TO DATABASE TABLES.
+                Dim newindex As New stockorder With {
+                                                        .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                        .OrderId = order.OrderId,
+                                                        .PermID = currentorder.PermId,
+                                                        .Symbol = contract.Symbol.ToUpper(),
+                                                        .Action = order.Action,
+                                                        .TickPrice = Tws1.StockTickPrice,
+                                                        .LimitPrice = order.LmtPrice,
+                                                        .Status = Tws1.Status,
+                                                        .Quantity = order.TotalQuantity,
+                                                        .OrderStatus = "Open",
+                                                        .roboIndex = "test",
+                                                        .matchID = order.OrderId,
+                                                        .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                    }                                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                db.stockorders.InsertOnSubmit(newindex)                                                                                                                         ' INSERT THE NEW RECORD TO BE ADDED.
+                db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
+
+            End Using
+
+            datastring = datastring & "order Id: " & order.OrderId & " Perm Id:" & currentorder.PermId & " Symbol: " & contract.Symbol & " Total Shares: " &
+                order.TotalQuantity & " Price: " & order.LmtPrice & " Order Status:" & Tws1.Status
+
+
+
+            Return Content(datastring)                                                                                                                                                  ' RETURNS CONTENT IN DATASTRING TO THE VIEW
+        End Function
+
+        ' THIS IS THE START OF THE CODE FOR THE CANCELLATION OF AN ORDER - NEED TO WORK THROUGH THE RETRIEVE ORDER FROM TABLE AND SETTING THE STATUS PARAMETERS FOR THOSE RECORDS
+        ' PLACED THE CODE HERE TO ALLOW OTHER TESTING TO BE BUILT - RETURN THIS CODE TO THE SANDBOX TO WORK ON THE BUILD.
+
+        'Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+        '    Dim ou = db.getSOtocancel(2)                                                                                                            ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
+        '    ou.Status = "Closed"                                                                                                                                                 ' UPDATE PERMID
+        '    ou.OrderStatus = "Cancelled"                                                                                                                                      ' UPDATE TICKPRICE
+        '    ou.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+        '    db.SubmitChanges()
+
+        'End Using
+
+        'Call Tws1.cancelOrder(2)
+
+        'datastring = Tws1.OrderID
+
         Function profile()
             Return View()
         End Function
@@ -287,22 +1284,13 @@ Namespace bondi
             Return Content(datastring)
         End Function
 
-        Function IBTest() As ActionResult
-            Using db As New wavesDataContext
-                Dim indexlist = (From m In db.HarvestIndexes Select m).ToList()                                                                                                 ' SELECT ALL TRADING CONTROL CARDS AND ADD THEM TO THE INDEX LIST                
 
-                Dim model As New wavesViewModel()                                                                                                                               ' INITIALIZE THE MODEL TO BE USED FOR THE VIEW 
-                model.AllIndexes = indexlist                                                                                                                                    ' ADD THE INDEXLIST TO THE MODEL
-
-                Return View(model)                                                                                                                                              ' RETURN THE MODEL TO THE VIEW FOR DISPLAY
-            End Using
-        End Function
 
         <HttpPost()> _
         Function connectAPI(ByVal testdata As Date) As ActionResult
 
             'TWS Paper trading userid: tpaper182
-            'TWS paper trading pw: Roswell182
+            'TWS paper trading pw: Judy3508
 
             Dim datastring As String = ""
             Dim Tws1 As Tws = New Tws()
@@ -564,9 +1552,9 @@ Namespace bondi
 
             Tws1.reqMktDataEx(1, contract, "", False, Nothing)
 
-            Thread.Sleep(10000)
+            Thread.Sleep(1000)
 
-            datastring = contract.Symbol & " Price at " & DateTime.Parse(Now()).ToShortTimeString() & " : " & Tws1.OrderID
+            datastring = contract.Symbol & " Price at " & DateTime.Parse(Now()).ToShortTimeString() & " : " & String.Format("{0:C}", Tws1.StockTickPrice)
 
             Tws1.cancelMktData(1)
 
@@ -576,480 +1564,15 @@ Namespace bondi
 
         End Function
 
-        <HttpPost()>
-        Function runRobot(ByVal testdata As Date, ByVal primebuy As String, ByVal robotindex As String, ByVal rowid As Integer) As ActionResult
 
-            ' VARIABLES USED IN THIS FUNCTION
-            Dim csvdata As String = ""                                                                                                                                                  ' USED TO HOUSE THE TEXT FILE             
-            Dim path As String = "~\\content\assets\excel\intervals.csv"                                                                                                                ' BASE PATH OF THE FILE TO BE READ INTO MEMORY.
-            Dim fullpath As String = Request.MapPath("~\\content\assets\excel\intervals.csv")                                                                                           ' PROVIDES INTERVAL INFORMATION TO CALC THE ORDERID FOR EACH INTERVAL PER DAY.
-            Dim datastring As String = ""                                                                                                                                               ' DATASTRING THAT RETURNS RESULTS TO THE VIEW AND CALLS REQUIRED FUNCTIONS.
-            Dim width As Integer = 0.25                                                                                                                                                 ' WIDTH VARIABLE CONTAINING THE AMOUNT BETWEEN PRICES EACH TIME YOU BUY OR SELL.
-            Dim connected As String = ""                                                                                                                                                ' STRING INITIALIZED WHEN CONNECTED TO TWS - DISPLAYS THE STATUS ONLINE OR OFFLINE.
-            Dim rnd As String = ""                                                                                                                                                      ' STRING USED TO BUILD THE ORDER ID **NOTE ANY NEW ODERID MUST BE LARGER THAN ANY ORDER IDs OF ORDERS STILL OPEN
-            Dim status As String = ""                                                                                                                                                   ' STRING USED TO DETERMINE WHETHER AN ORDER IS OPEN OR NOT VALUES: OPEN, FILLED, CANCELLED
-            Dim checksum As Double = 0                                                                                                                                                  ' INTEGER USED TO HOUSE THE CENTS OF THE STOCK TICK PRICE TO DETERMINE WHAT PRICE TO SEND THE ORDER AT
-            Dim qty As Double = 0                                                                                                                                                      ' INTEGER USED TO CALULATE QUALTITY FOR BUYING AND SELLING OF SHARES
-            Dim symbol As String = ""
 
-            Dim contract As IBApi.Contract = New IBApi.Contract()
-            Dim order As IBApi.Order = New IBApi.Order()
+        <HttpGet()>
+        Function editexperiment() As ActionResult
 
 
-            ' SET UP THE INTERVALS FOR THE CURRENT TIME PERIOD
-            Using textReader As New System.IO.StreamReader(fullpath)                                                                                                                    ' TEXT READER PULLS AND READS THE FILE.
-                csvdata = textReader.ReadToEnd                                                                                                                                          ' LOAD THE ENTIRE FILE INTO THE STRING.
-            End Using                                                                                                                                                                   ' CLOSE THE TEXT READER.
+            Return View()
 
-            Dim intervals As List(Of interval) = ParseIntervalData(csvdata)                                                                                                             ' CALL THE FUNCTION TO PARSE THE DATA INTO ROWS AND RETURN OPEN MARKET HOURS.
-
-            Dim timetemp As String = (String.Format("{0:h:mm}", Now()))                                                                                                                 ' TEMPORARY STRING HOLDING CURRENT TIME USED IN THE LOOP TO GET THE INTERVAL NUMBER
-
-            For Each interval In intervals                                                                                                                                              ' LOOP TO GET INTERVAL NUMBER FOR NEXTORDERID NUMBER
-                If timetemp = interval.iTime Then                                                                                                                                       ' CHECK INTERVAL TIME AGAINST CURRENT TIME
-                    rnd = Mid(Year(Now()), 3, 2) & String.Format("{0:00}", Month(Now())) & String.Format("{0:00}", Day(Now())) & String.Format("{0:0000}", (interval.Interval + 1))           ' ESTABLISHES THE NEXTORDERID NUMBER THROUGH THIS VARIABLE
-                    datastring = interval.Interval & ": " & String.Format("{0:hh:mm:ss}", testdata.ToLocalTime) & " "                                                                   ' INITIALIZE DATASTRING WITH ROWID, AND TIME
-                End If
-            Next
-
-            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
-
-                ' 1. PULL TRADING CONTROL CARDS FOR CURRENT USER
-                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                                                           ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
-                symbol = hi.product.ToUpper()                                                                                                                                           ' SETS THE SYMBOL FOR THE BACKTEST BASED ON THE EXPERIMENT SELECTED.
-
-                ' 2. Get list of open orders for the control card product
-                Dim orderlist As List(Of stockorder)
-
-                orderlist = (From stockorder In db.stockorders Where stockorder.Symbol = symbol And stockorder.OrderStatus = "Open" Order By stockorder.LimitPrice Descending).ToList   ' BUILDS THE ORDER LIST TO COMPARE WHAT ORDERS ARE IN THE TABLE TO OPEN ORDERS IN TWS
-
-                ' 3. Connect to TWS
-                connected = TWSconnect()                                                                                                                                                ' CALLED FUNCTION TO CONNECT TO TWS
-
-                ' 4. Get current open orders out of TWS
-                Tws1.reqAllOpenOrders()                                                                                                                                                 ' GET OPEN POSITIONS TO DETERMINE WHAT IS OPEN AND WHAT HAS FILLED.            
-                Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECOND
-
-                Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                                   ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
-
-                ' 5. Check if there an order exists for the product selected
-                ' ***** IF THERE IS NOT AN ORDER IN PLACE FOR THE SELECTED PRODUCT ADD AN ORDER BASED ON THE PRIME THE PUMP VALUE ENTERED *****
-                If orderlist.Count() = 0 Then                                                                                                                                           ' CHECKS TO SEE IF THERE ARE ANY ORDERS FOR CURRENT PRODUCT TO START THE STRATEGY
-
-                    contract.Symbol = symbol.ToUpper()                                                                                                                                  ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-                    contract.SecType = "STK"                                                                                                                                            ' SET THE SECRUTIY TYPE TO STOCK (STK, OPT, CASH) (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-                    contract.Currency = "USD"                                                                                                                                           ' SET CURRENCY TO US DOLLARS (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-                    contract.Exchange = "SMART"                                                                                                                                         ' SET ROUTING EXCHANGE TO SMART  (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-
-                    order.OrderId = rnd                                                                                                                                                 ' SET THE ORDERID TO BE AT LEAST 1 NUMBER HIGHER THAN ANY ORDERS PLACED
-                    order.Action = "BUY"                                                                                                                                                ' SET ACTION TO BUY. 
-                    order.OrderType = "LMT"                                                                                                                                             ' ORDER IS A LIMIT ORDER AND NOT A MARKET ORDER (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-                    order.Tif = "GTC"                                                                                                                                                   ' ORDER DURATION IS GOOD TIL CANCELLED (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-                    order.LmtPrice = primebuy                                                                                                                                           ' LIMIT PRICE SET AT THE PRIME THE PUMP ENTRY AMOUNT
-                    order.TotalQuantity = 100                                                                                                                                           ' QUANTITY IS SET AT 100 (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)
-
-                    Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
-                    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
-                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
-
-                    Call Tws1.placeOrderEx(rnd, contract, order)                                                                                                                        ' CALL API FUNCTION TO PLACE THE ORDER
-                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
-
-                    Dim newStockOrder As New stockorder                                                                                                                                 ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
-                    TryUpdateModel(newStockOrder)                                                                                                                                       ' TEST CONNECTION TO DATABASE TABLES.
-                    Dim newindex As New stockorder With {
-                                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
-                                                    .OrderId = rnd,
-                                                    .Symbol = contract.Symbol.ToUpper(),
-                                                    .Action = order.Action,
-                                                    .TickPrice = Tws1.StockTickPrice,
-                                                    .LimitPrice = order.LmtPrice,
-                                                    .Status = Tws1.Status,
-                                                    .Quantity = order.TotalQuantity,
-                                                    .OrderStatus = "Open",
-                                                    .roboIndex = robotindex,
-                                                    .PermID = order.PermId,
-                                                    .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
-                                                }                                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
-
-                    db.stockorders.InsertOnSubmit(newindex)                                                                                                                             ' INSERT THE NEW RECORD TO BE ADDED.
-                    db.SubmitChanges()                                                                                                                                                  ' SUBMIT THE CHANGES TO THE TABLE.
-
-                    Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
-                    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
-                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
-
-                    Call Tws1.reqAllOpenOrders()                                                                                                                                        ' API FUNCTION CALL TO GET ALL OPEN ORDERS FROM TWS
-                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
-
-                    Tws1.listOrderStatus = Tws1.listOrderStatus.Select(Function(x) x).Distinct().ToList()                                                                               ' REMOVE ANY DUPLICATES FROM THE OPEN ORDERS LIST
-
-                    For Each item In Tws1.OpenOrderList                                                                                                                                 ' CYCLE THROUGH THE CURRENT OPEN ORDERS IN TWS
-                        Dim itemExist As Boolean = Tws1.OpenOrderList.Any(Function(x) x.OId = rnd)                                                                                      ' QUERY TO SEARCH LIST TO DETERMINE IF ORDER IN TABLE EXISTS IN TWS LIST
-                        If itemExist = False Then                                                                                                                                       ' IF THERE IS AN ORDER AND IT TRIGGERS FALSE THERE IS AN ERROR THAT HAS OCCURRED
-                            datastring = datastring & " An Error has occured with the Order."                                                                                           ' UPDATE THE DATASTRING
-                        Else
-                            Dim ou = db.pullstockorder(item.OId, item.OAction)                                                                                                          ' PULL THE ORDER JUST ADDED TO UPDATE THE PERMID & TICKPRICE
-                            ou.PermID = item.PermId                                                                                                                                     ' UPDATE PERMID
-                            ou.TickPrice = Tws1.StockTickPrice                                                                                                                          ' UPDATE TICKPRICE
-                            db.SubmitChanges()                                                                                                                                          ' SAVE CHANGES TO THE DATABASE
-                        End If
-                    Next
-
-                    datastring = datastring & " Order added " & Tws1.OrderID & " " & symbol & " " & String.Format("{0:C}", order.LmtPrice)                                              ' UPDATE DATASTRING TO DISPLAY SUCCESSFUL INITIAL ORDER PLACED TO THE VIEW
-                Else
-
-                    ' ***** THERE ARE ORDERS FOR THIS PRODUCT THAT EXIST *****
-                    Tws1.reqMarketDataType(3)                                                                                                                                           ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
-                    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                  ' API CALL TO GET THE PRODUCTS TICK PRICE                       
-                    Thread.Sleep(1000)                                                                                                                                                  ' DELAY TIMER OF 1 SECOND
-
-                    ' 6. Check to make sure order in table is still open in TWS. (Only the Buy order being filled in this process)
-
-                    For Each Item In orderlist
-
-                        Dim itemExist As Boolean = Tws1.OpenOrderList.Any(Function(x) x.Symbol = Item.Symbol And x.LmtPrice = Item.LimitPrice)                                                      ' QUERY TO SEARCH LIST TO DETERMINE IF ORDER IN TABLE EXISTS IN TWS LIST
-                        If itemExist = False Then                                                                                                                                                   ' ORDER WAS FILLED, PROCESS NEXT STEPS FOLLOWING THAT FILL
-                            Stop
-                            '        ' 1. Log that the order in the table was filled and set the status to filled
-
-                            '        Dim so = db.getstockorder(Item.PermID, Item.Action)                                                                                                             ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
-                            '        so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                                       ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
-                            '        so.Status = "Filled"                                                                                                                                            ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
-                            '        so.OrderStatus = "Closed"                                                                                                                                       ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
-                            '        db.SubmitChanges()
-
-                            '        ' 2. Add the position to the position table
-                            '        If Item.Action = "Buy" Then
-                            '            qty = 100
-                            '        Else
-                            '            qty = -100
-                            '        End If
-                            '        ' Determine if position exists - if not add it if so update it
-
-                            '        Dim posExists As Boolean = db.stockposExists(symbol)
-
-                            '        If posExists = True Then
-
-                            '            Dim sp = db.getposition(symbol)
-                            '            sp.lasttimestamp = DateTime.Parse(Now).ToUniversalTime()
-                            '            sp.qty = sp.qty + qty
-
-                            '            db.SubmitChanges()
-                            '        Else
-
-                            '            Dim newStockPosition As New position                                                                                                                            ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
-                            '            TryUpdateModel(newStockPosition)                                                                                                                                ' TEST CONNECTION TO DATABASE TABLES.
-                            '            Dim newPosition As New position With {
-                            '                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
-                            '                                    .lasttimestamp = DateTime.Parse(Now).ToUniversalTime(),
-                            '                                    .symbol = symbol.ToUpper(),
-                            '                                    .qty = Item.Quantity
-                            '                                }                                                                                                                                           ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
-
-                            '            db.positions.InsertOnSubmit(newPosition)                                                                                                                           ' INSERT THE NEW RECORD TO BE ADDED.
-                            '            db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
-
-                            '        End If
-
-                            '        ' 3. Send a Sell to Close order to TWS - think through if this can just be the opposite reducing the cycle time on this transaction
-
-                            '        contract.Symbol = symbol.ToUpper()                                                                                                                                      ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON
-                            '        contract.SecType = "STK"
-                            '        contract.Currency = "USD"
-                            '        contract.Exchange = "SMART"
-
-                            '        order.OrderId = CInt(rnd)
-                            '        If Item.Action = "BUY" Then
-                            '            order.Action = "SELL"
-                            '            order.LmtPrice = Item.LimitPrice + hi.width + 0.05                                   ' Need to build in the commission structure as the last entry in the formula
-                            '        Else
-                            '            order.Action = "BUY"
-                            '            order.LmtPrice = Item.LimitPrice - hi.width
-                            '        End If
-
-                            '        order.OrderType = "LMT"
-                            '        order.Tif = "GTC"
-                            '        order.TotalQuantity = 100
-
-                            '        Call Tws1.placeOrderEx(rnd, contract, order)
-                            '        Thread.Sleep(1000)
-
-                            '        ' 4. Log the sell order in the data tables - think through if this can just be the opposite reducing the cycle time on this transaction
-
-                            '        Dim newStockOrder As New stockorder                                                                                                                        ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
-                            '        TryUpdateModel(newStockOrder)                                                                                                                                   ' TEST CONNECTION TO DATABASE TABLES.
-                            '        Dim newindex As New stockorder With {
-                            '                                .timestamp = DateTime.Parse(Now).ToUniversalTime(),
-                            '                                .OrderId = rnd,
-                            '                                .Symbol = contract.Symbol.ToUpper(),
-                            '                                .Action = order.Action,
-                            '                                .TickPrice = Tws1.StockTickPrice,
-                            '                                .LimitPrice = order.LmtPrice,
-                            '                                .Status = Tws1.Status,
-                            '                                .Quantity = order.TotalQuantity,
-                            '                                .OrderStatus = "Open",
-                            '                                .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
-                            '                            }                                                                                                                                           ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
-
-                            '        db.stockorders.InsertOnSubmit(newindex)                                                                                                                      ' INSERT THE NEW RECORD TO BE ADDED.
-                            '        db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
-
-                        Else
-                            ' Check if there is a permid and OrderId for the order
-                            datastring = datastring & " Order still open. " & Item.PermID & " " & Item.Symbol & " " & String.Format("{0:C}", Item.LimitPrice)
-                        End If
-                    Next
-
-                End If
-
-
-
-
-
-
-
-
-
-
-
-                'For Each item In Tws1.OpenOrderList
-                'If item.Symbol = symbol Then
-                '    ' This happens when there are more than one order for the symbol to close
-                '    If db.stockorderExists(item.PermId, item.OAction) = True Then
-                '        'datastring = datastring & " Order Exists " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice
-                '        MsgBox("exists")
-                '    Else
-                '        'datastring = datastring & " Order Filled " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice & "  *****"
-                '        MsgBox("absent")
-                '    End If
-                'Else
-
-                '    
-                '    Stop
-                '    'so.PermID = item.PermId
-                '    'db.SubmitChanges()
-
-
-                '    contract.Symbol = symbol.ToUpper()                                                                                                                                      ' SET THE SYMBOL TO RETRIEVE THE TICK PRICE ON
-                '    contract.SecType = "STK"
-                '    contract.Currency = "USD"
-                '    contract.Exchange = "SMART"
-
-                '    ' No Orders exist that match the symbol at all happens when there was 1 order that filled for that symbol.
-                '    ' Steps when this happens
-                '    
-                '    ' 2. Add the position created to the position table
-                '    ' 3. Send an opposite order to TWS 
-                '    ' 4. Log that order in the orders table 
-                '    MsgBox("No Order in TWS matching database order for " & symbol)
-                'End If
-
-
-
-                'Next
-
-
-
-
-
-                'Stop
-
-
-
-
-
-            End Using                                                                                                                                                                   ' CLOSE THE DATA CONTEXT FOR THE DATABSE. 
-
-
-
-
-            'Tws1.reqMarketDataType(3)                                                                                                                                               ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
-            'Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                      ' API CALL TO GET THE PRODUCTS TICK PRICE                       
-            'Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECOND
-
-            'If Tws1.OpenOrderList.Count() = 0 Then                                                                                                                                      ' DETERMINE IF THERE ARE ANY EXISTING ORDERS THAT ARE OPEN - THIS WILL SET THE INITIAL MARK 
-
-
-            '    'Tws1.StockTickPrice = 1.85                                      ' DELETE DURING DAYTIME - FOR TEST PURPOSES ONLY!
-            '    If Tws1.StockTickPrice > 0 Then
-            '        checksum = Tws1.StockTickPrice - Int(Tws1.StockTickPrice)                                                                                                           ' SET CHECKSUM EQUAL TO THE CENTS OF THE STOCK TICK PRICE TO DETERMINE ORDER LEVEL
-            '        order.OrderId = CInt(rnd)
-            '        order.Action = "BUY"
-            '        order.OrderType = "LMT"
-            '        order.Tif = "GTC"
-            '        order.TotalQuantity = 100
-
-            '        ' *********************************************************************************
-            '        ' THIS IS CURRENTLY SET UP FOR QUARTERS NEED TO WORK OUT THE MATH ALGO TO READ FROM THE CONTROL CARD.
-            '        '
-            '        ' POSSIBLE SOLUTION NEED TO VALIDATE THE MATH IN EXCEL.
-            '        ' TAKE CURRENT DECIMAL VALUE eg. .24 AND DIVIDE BY THE TRIGGER VALUE eg. .05  TAKE THE INTEGER OF THAT RESULT AND MULTIPLY IT BY THE TRIGGER VALUE
-            '        ' EXAMPLE:  .24 / .05 = 4.8 | INTEGER VALUE IS 4 * .05 = .20 AS THE TRIGGER TO BUY
-            '        ' ******* validated in excel 1/17/18  This will replace all the If thens below.
-            '        ' *********************************************************************************
-
-            '        If checksum > 0.75 And checksum < 0.99 Then
-            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.75 '- (rowid * width)
-            '        ElseIf checksum > 0.5 And checksum < 0.76 Then
-            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.5 ' - (rowid * width)
-            '        ElseIf checksum > 0.25 And checksum < 0.51 Then
-            '            order.LmtPrice = Int(Tws1.StockTickPrice) + 0.25 '- (rowid * width)
-            '        Else
-            '            order.LmtPrice = Int(Tws1.StockTickPrice) + .00 '- (rowid * width)
-            '        End If
-
-            '        Call Tws1.placeOrderEx(rnd, contract, order)
-            '        Thread.Sleep(1000)
-            '        'Stop
-            '        'MsgBox(contract.Symbol & " " & order.OrderId)
-
-            '        Using db As New wavesDataContext                                                                                                                                    ' OPEN THE DATA CONTEXT FOR THE DATABASE.
-
-            '            'Dim userid = db.GetUserIdForUserName("csquared20")                                                                                                             ' GET THE USERID FROM USERNAME. (THIS WILL HAVE TO BE EDITED WHEN SECURITY IS INSTALLED.)
-
-            '            Dim newStockOrder As New stockorder                                                                                                                        ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
-            '            TryUpdateModel(newStockOrder)                                                                                                                                   ' TEST CONNECTION TO DATABASE TABLES.
-            '            Dim newindex As New stockorder With {
-            '                                    .timestamp = DateTime.Parse(Now).ToUniversalTime(),
-            '                                    .OrderId = order.OrderId,
-            '                                    .Symbol = contract.Symbol.ToUpper(),
-            '                                    .Action = order.Action,
-            '                                    .TickPrice = Tws1.StockTickPrice,
-            '                                    .LimitPrice = order.LmtPrice,
-            '                                    .Status = Tws1.Status,
-            '                                    .Quantity = order.TotalQuantity,
-            '                                    .OrderStatus = "Open",
-            '                                    .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
-            '                                }                                                                                                                                           ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
-
-            '            db.stockorders.InsertOnSubmit(newindex)                                                                                                                      ' INSERT THE NEW RECORD TO BE ADDED.
-            '            db.SubmitChanges()                                                                                                                                              ' SUBMIT THE CHANGES TO THE TABLE.
-
-            '        End Using
-
-
-
-
-
-            '        datastring = datastring & " Stock Price: " & Tws1.StockTickPrice & " No Open Orders Sending Order: " &
-            '            String.Format("{0:C}", order.LmtPrice) & " | " & String.Format("{0:0.00}", checksum)                                                                            ' COMPILE THE DATASTRING INDICAITNG THE TRANSACTION OCCURRING
-            '    Else                                                                                                                                                                    ' STOCK TICK PRICE RECEIVED WAS 0.00 (ERROR) SO DO NOT PROCESS ANYTHING
-            '        datastring = datastring                                                                                                                                             ' NO CHANGE IN THE DATASTRING BECAUSE OF THE ERROR
-            '    End If
-
-
-            'Else                                                                                                                                                                        ' IF ORDERS ARE PRESENT PROCESS THE STEPS BELOW
-
-            '    ' Check to see if there are any orders for the symbol entered or pulled from the Control Card
-            '    ' Update the PermId for any New order submitted - COMPLETE
-            '    ' Check to see if that order was filled and update the Buy Action Record
-            '    ' Add new record to Positions table if it does not exist Update (Increment counts) if it does (Single record of positions for stock and hedge per product)
-            '    ' If Buy Order is filled submit Sell Order and Add Sell Order to Orders Table
-            '    ' Update Perm Id for Sell order 
-            '    ' If Sell order is filled submit Buy order and add it to the orders table
-            '    ' Decrement the count in the Positions Table
-            '    ' Repeat
-            '    Tws1.reqMarketDataType(3)                                                                                                                                               ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
-            '    Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                                                      ' API CALL TO GET THE PRODUCTS TICK PRICE                       
-            '    Thread.Sleep(1000)                                                                                                                                                      ' DELAY TIMER OF 1 SECONDS
-            '    'Tws1.StockTickPrice = 1.85                                      ' DELETE DURING DAYTIME - FOR TEST PURPOSES ONLY!
-
-            '    For Each item In Tws1.OpenOrderList
-            '        Using db As New wavesDataContext
-
-            '            If db.stockorderExists(item.OId, item.OAction) = True Then
-            '                datastring = datastring & " Order Exists " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice
-            '            Else
-            '                datastring = datastring & " Order Filled " & item.OId & " - " & item.Symbol & " " & item.OAction & " " & String.Format("{0:C}", item.LmtPrice) & " Current Stock Price: " & Tws1.StockTickPrice & "  *****"
-            '            End If
-
-
-
-            '        End Using
-
-
-            '        'datastring = datastring & " " & item.OId & "-" & item.Symbol & " " & item.Status
-            '    Next
-            'End If
-
-
-
-
-            ''Call Tws1.reqAllOpenOrders()
-            ''For Each OpenOrders In Tws1.OpenOrderList
-
-            ''    'MsgBox(OpenOrders.PermId & " : " & OpenOrders.Symbol)
-            ''    datastring += " Order Id: " & OpenOrders.PermId & " Symbol: " & OpenOrders.Status & "<br/>"
-            ''Next
-
-            ''If Tws1.StockTickPrice <> 0 Then
-
-            ''If Tws1.StockTickPrice <= 28 Then
-
-            ''Dim rnd As Integer = RandomGenerator() * 0.0001
-            ''If rnd < 0 Then
-            ''    rnd = rnd * -1
-            ''End If
-
-            ''Dim contract As IBApi.Contract = New IBApi.Contract()
-            ''contract.Symbol = symbol.ToUpper()
-            ''contract.SecType = "STK"
-            ''contract.Currency = "USD"
-            ''contract.Exchange = "SMART"
-
-
-            ''rnd = Mid(Year(Now()), 3, 2) & Month(Now()) & Day(Now()) & (rowid + 1)             ' TEST to see is this works - may want to comment it out once verified adding year works
-
-            ''order.OrderId = CInt(rnd)
-            ''order.Action = "BUY"
-            ''order.OrderType = "LMT"
-            ''order.Tif = "GTC"
-            ''order.LmtPrice = 1.75 '- (rowid * width)
-            ''order.TotalQuantity = 100
-
-
-
-            ''Call Tws1.reqAllOpenOrders()
-            ''For Each OpenOrders In Tws1.OpenOrderList
-
-            ''MsgBox(OpenOrders.Symbol & " " & OpenOrders.LmtPrice & " " & OpenOrders.Status & " : " & Tws1.Status)
-
-            ''Next
-
-            '''''''''''Call Tws1.placeOrderEx(rnd, contract, order)
-            '''''''''''Thread.Sleep(10000)
-
-            '''''''''''datastring = datastring & contract.Symbol & " : " & (String.Format("{0:C}", Tws1.StockTickPrice)) & " Order Id:" & order.OrderId &
-            '''''''''''    " Total Shares: " & order.TotalQuantity & " Price: " & (String.Format("{0:C}", order.LmtPrice)) & " Order Status: " & Tws1.Status & " - "
-
-            ''Else
-            ''   datastring = datastring & contract.Symbol & " : " & Tws1.StockTickPrice
-            ''End If
-
-            '' Else
-            ''datastring = datastring & contract.Symbol & " : Error"
-            ''End If
-
-            'Call Tws1.reqAllOpenOrders()
-            'For Each OpenOrders In Tws1.OpenOrderList
-
-            '    If OpenOrders.OId = order.OrderId Then
-            '        datastring = datastring & "C"
-
-            '    End If
-
-            'Next
-
-
-            Tws1.cancelMktData(1)
-
-            Call Tws1.disconnect()
-
-            Return Content(datastring)
-        End Function                                                                                                                                                                                                                    ' ROBOT MAIN FUNCTION
-
-
+        End Function
 
 
         '<HttpPost()> _
@@ -1181,8 +1704,8 @@ Namespace bondi
             End Using
         End Function
 
-        <HttpPost()> _
-        Function addexperiment(ByVal expname As String, ByVal expsymbol As String, ByVal exptrigger As Double, ByVal expwidth As Double) As ActionResult
+        <HttpPost()>
+        Function addexperiment(ByVal expname As String, ByVal expsymbol As String, ByVal buytrigger As Double, ByVal selltrigger As Double) As ActionResult
 
             Dim harvestkey = New StringBuilder(12).AppendRandomString(12).ToString()                                                                                ' GENERATE A RANDOM STRING OF 12 CHARACTERS AS A KEY TO BE USED TO TAG EXPERIMENTS TO OUTCOMES.
 
@@ -1192,15 +1715,15 @@ Namespace bondi
 
                 Dim newHarvestIndex As New HarvestIndex                                                                                                             ' OPEN NEW STRUCTURE FOR RECORD IN HARVEST TABLE.
                 TryUpdateModel(newHarvestIndex)                                                                                                                     ' TEST CONNECTION TO DATABASE TABLES.
-                Dim newindex As New HarvestIndex With { _
-                                                .active = True, _
-                                                .product = expsymbol.ToUpper, _
-                                                .userID = userid, _
-                                                .name = expname, _
-                                                .timestamp = DateTime.Parse(Now).ToUniversalTime(), _
-                                                .harvestKey = harvestkey, _
-                                                .opentrigger = exptrigger, _
-                                                .width = expwidth _
+                Dim newindex As New HarvestIndex With {
+                                                .active = True,
+                                                .product = expsymbol.ToUpper,
+                                                .userID = userid,
+                                                .name = expname,
+                                                .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                .harvestKey = harvestkey,
+                                                .opentrigger = buytrigger,
+                                                .width = selltrigger
                                             }                                                                                                                       ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
 
                 db.HarvestIndexes.InsertOnSubmit(newindex)                                                                                                          ' INSERT THE NEW RECORD TO BE ADDED.
@@ -3309,6 +3832,205 @@ Namespace bondi
             End If
 
             Return connected                                                                                                                                ' RETURN THE VALUE OF CONNECTED                 
+        End Function
+
+        Public Function GetPrice(ByVal robotindex As String) As Double
+
+            Dim currentprice As Double = 0                                                                                                                  ' VALUE RETURNED FROM THIS FUNCTION BEING CALLED
+            Dim contract As IBApi.Contract = New IBApi.Contract()                                                                                           ' ESTABLISH A NEW CONTRACT CLASS
+
+            Using db As New wavesDataContext                                                                                                                ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                               ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
+
+                contract.Symbol = hi.product                                                                                                                ' INITIALIZE SYMBOL VALUE FOR THE CONTRACT
+                contract.SecType = hi.stocksectype                                                                                                          ' INITIALIZE THE SECURITY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Currency = hi.currencytype                                                                                                         ' INITIALIZE CURRENCY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Exchange = hi.exchange                                                                                                             ' INITIALIZE EXCHANGE USED FOR THE CONTRACT
+
+                connected = TWSconnect()                                                                                                                    ' CONNECTS TO TWS
+                Tws1.reqMarketDataType(3)                                                                                                                   ' SETS DATA FEED TO (1) LIVE STREAMING  (2) FROZEN  (3) DELAYED 15 - 20 MINUTES 
+                Tws1.reqMktDataEx(1, contract, "", False, Nothing)                                                                                          ' API CALL TO GET THE PRODUCTS TICK PRICE                       
+                Thread.Sleep(500)                                                                                                                           ' SETS A DELAY FOR ONE HALF OF A SECOND
+                Tws1.disconnect()                                                                                                                           ' DISCONNECTS FROM TWS
+
+                currentprice = Tws1.StockTickPrice                                                                                                          ' SET CURRENT PRICE TO STOCKTICKPRICE TO BE PASSED TO CALLING FUNCTION
+
+            End Using
+
+            Return currentprice                                                                                                                             ' PASS CURRENT PRICE VALUE BACK TO FUNCTION
+
+        End Function
+
+        Public Function UpdateOrder(ByVal currentprice As Double, ByVal permID As Integer, ByVal action As String) As Boolean
+            Dim updated As Boolean = True
+
+            Using db As New wavesDataContext                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+                Dim so = db.getstockorder(permID, action)                                                                                                               ' GET THE FILLED ORDER RECORD FROM THE STOCKORDERS TABLE TO EDIT
+                so.OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()                                                                                               ' UPDATE THE ORDERTIMESTAMP TO REFLECT CURRENT UPDATE TO CLOSURE OF THE ORDER - WILL RUN BEHIND ACTUAL FILL 
+                so.TickPrice = currentprice                                                                                                                             ' UPDATE THE TICKPRICE WITH THE CURRENT PRICE THE ORDER WAS FILLED AT
+                so.Status = "Filled"                                                                                                                                    ' SET STATUS OF THE ORDER TO FILLED IN THE TABLE
+                so.OrderStatus = "Closed"                                                                                                                               ' SET ORDER STATUS TO CLOSED TO CLOSE THE ORDER IN THE TABLE
+                db.SubmitChanges()                                                                                                                                      ' SUBMIT CHANGES TO THE DATABASE
+            End Using
+
+            Return (updated)
+        End Function
+
+        Public Function firstorder(ByVal robotindex As String, ByVal action As String, ByVal limitprice As Double, ByVal matchid As Integer, ByVal idadd As Integer) As Boolean
+            Dim ordersent As Boolean = True
+            Dim symbol As String = ""                                                                                                                                                   ' HOUSES THE SYMBOL INFORMATION
+            Dim currentprice As Double = 0                                                                                                                                              ' VARIABLE USED TO HOLD THE CURRENT STOCK TICK PRICE
+            Dim maxorderid As Integer = 0                                                                                                                                               ' HOUSES AND MANAGES THE ORDER IDS FOR THE SYSTEM
+            Dim pID As Double = 0                                                                                                                                                       ' HOUSES AND MANAGES THE PERMID FOR THE ORDERS
+            Dim contract As IBApi.Contract = New IBApi.Contract()                                                                                                                       ' ESTABLISH A NEW CONTRACT CLASS
+            Dim order As IBApi.Order = New IBApi.Order()                                                                                                                                ' ESTABLISH A NEW ORDER CLASS
+
+            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                currentprice = GetPrice(robotindex)                                                                                                                                     ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE
+
+                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                                                           ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
+                symbol = hi.product.ToUpper()                                                                                                                                           ' SETS THE SYMBOL FOR THE BACKTEST BASED ON THE EXPERIMENT SELECTED.
+
+                maxorderid = (From q In db.stockorders Select q.OrderId).Max()                                                                                                          ' RETRIEVE THE MAX ORDER ID FROM THE TABLE TO SEND A NEW ORDER TO TWS 
+
+                contract.Symbol = hi.product                                                                                                                                            ' INITIALIZE SYMBOL VALUE FOR THE CONTRACT
+                contract.SecType = hi.stocksectype                                                                                                                                      ' INITIALIZE THE SECURITY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Currency = hi.currencytype                                                                                                                                     ' INITIALIZE CURRENCY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Exchange = hi.exchange                                                                                                                                         ' INITIALIZE EXCHANGE USED FOR THE CONTRACT
+
+                order.OrderId = maxorderid + idadd                                                                                                                                      ' INCREMENT THE ORDER ID BY 1 
+                order.Action = action           ' CAN THIS BE CALLED AS A FUNCTION? ONLY CHANGE IS THE ACTION                                                                           ' INITIALIZE ACTION IN THE ORDER
+                order.OrderType = hi.ordertype                                                                                                                                          ' INITIALIZE THE ORDER TYPE IN THE ORDER - MOVE TO SETTINGS AT SOME POINT
+                order.Tif = hi.inforce                                                                                                                                                  ' ORDER DURATION IS GOOD TIL CANCELLED (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)                
+                order.TotalQuantity = hi.shares                                                                                                                                         ' INITIALIZE THE ORDER QUANTITY IN THE ORDER - MOVE TO SETTINGS AT SOME POINT 
+
+                If action = "BUY" Then
+                    order.LmtPrice = limitprice                                                                                                                                         ' INITIALIZE THE PRICE IN THE ORDER
+                    matchid = order.OrderId
+                Else
+                    order.LmtPrice = limitprice + hi.width                                                                                                                              ' INITIALIZE THE PRICE IN THE ORDER
+                End If
+
+                connected = TWSconnect()                                                                                                                                                ' CALLED FUNCTION TO CONNECT API TO TWS
+                Call Tws1.placeOrderEx(order.OrderId, contract, order)                                                                                                                  ' CALLED FUNCTION TO PLACE THE ORDER IN TWS
+                Thread.Sleep(1000)                                                                                                                                                      ' DELAY THREAD OF 1 SECOND
+                Tws1.disconnect()                                                                                                                                                       ' DISCONNECT FROM THE TWS API - THIS PREVENTS HAVING TO RESTART IF AN ERROR OCCURS LATER IN THE CODE
+
+                For Each item In Tws1.listOrderStatus
+                    If item.OrderID = order.OrderId Then
+                        pID = item.PermId                                                                                                                                               ' ATTACH THE PERMID TO THE VARIABLE TO BE SAVED IN THE TABLE
+                    Else
+                        pID = 0                                                                                                                                                         ' AN ERROR NEEDS TO BE THROWN HERE!!!
+                    End If
+                Next
+
+                Dim newStockOrder As New stockorder                                                                                                                                     ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                TryUpdateModel(newStockOrder)                                                                                                                                           ' TEST CONNECTION TO DATABASE TABLES.
+                Dim newindex As New stockorder With {
+                                                            .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                            .OrderId = order.OrderId,
+                                                            .PermID = pID,
+                                                            .Symbol = contract.Symbol.ToUpper(),
+                                                            .Action = order.Action,
+                                                            .TickPrice = currentprice,
+                                                            .LimitPrice = order.LmtPrice,
+                                                            .Status = Tws1.Status,
+                                                            .Quantity = order.TotalQuantity,
+                                                            .OrderStatus = "Open",
+                                                            .roboIndex = robotindex,
+                                                            .matchID = matchid,
+                                                            .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                        }                                                                                                                               ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                db.stockorders.InsertOnSubmit(newindex)                                                                                                                                 ' INSERT THE NEW RECORD TO BE ADDED.
+                db.SubmitChanges()                                                                                                                                                      ' SUBMIT THE CHANGES TO THE TABLE.
+
+            End Using
+
+            Return ordersent
+        End Function
+
+        Public Function sendorder(ByVal robotindex As String, ByVal action As String, ByVal limitprice As Double, ByVal matchid As Integer, ByVal idadd As Integer) As Boolean
+            Dim ordersent As Boolean = True                                                                                                                                             ' INITIALIZE ORDER SENT VARIABLE TO TRUE
+            Dim currentprice As Double = 0                                                                                                                                              ' VARIABLE USED TO HOLD THE CURRENT STOCK TICK PRICE
+            Dim symbol As String = ""                                                                                                                                                   ' HOUSES THE SYMBOL INFORMATION
+            Dim maxorderid As Integer = 0                                                                                                                                               ' HOUSES AND MANAGES THE ORDER IDS FOR THE SYSTEM
+            Dim pID As Double = 0                                                                                                                                                       ' HOUSES AND MANAGES THE PERMID FOR THE ORDERS
+            Dim contract As IBApi.Contract = New IBApi.Contract()                                                                                                                       ' ESTABLISH A NEW CONTRACT CLASS
+            Dim order As IBApi.Order = New IBApi.Order()                                                                                                                                ' ESTABLISH A NEW ORDER CLASS
+
+            Using db As New wavesDataContext                                                                                                                                            ' OPEN THE DATA CONTEXT FOR THE DATABASE.
+
+                currentprice = GetPrice(robotindex)                                                                                                                                     ' CALLED FUNCTION TO GET STOCK TICK PRICE AND RETURN USING THE CURRENT PRICE DOUBLE VARIABLE
+                Dim hi = db.GetHarvestIndex(robotindex, True)                                                                                                                           ' PULLS RELEVANT DATA BASED ON THE EXPERIMENT SELECTED.
+                symbol = hi.product.ToUpper()                                                                                                                                           ' SETS THE SYMBOL FOR THE BACKTEST BASED ON THE EXPERIMENT SELECTED.
+
+                maxorderid = (From q In db.stockorders Select q.OrderId).Max()                                                                                                          ' RETRIEVE THE MAX ORDER ID FROM THE TABLE TO SEND A NEW ORDER TO TWS 
+                If maxorderid >= 9 Then
+                    Stop
+                End If
+                contract.Symbol = symbol                                                                                                                                                ' INITIALIZE SYMBOL VALUE FOR THE CONTRACT
+                contract.SecType = hi.stocksectype                                                                                                                                      ' INITIALIZE THE SECURITY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Currency = hi.currencytype                                                                                                                                     ' INITIALIZE CURRENCY TYPE FOR THE CONTRACT - MOVE TO SETTINGS AT SOME POINT
+                contract.Exchange = hi.exchange                                                                                                                                         ' INITIALIZE EXCHANGE USED FOR THE CONTRACT
+
+                order.OrderId = maxorderid + idadd
+                'order.OrderId = Tws1.OrderID + idadd                                                                                                                                   ' INCREMENT THE ORDER ID BY 1                
+                'MsgBox(order.OrderId & " Order.orderid")
+
+                'MsgBox(Tws1.OrderID & " Tws1.orderid")
+
+                order.Action = action           ' CAN THIS BE CALLED AS A FUNCTION? ONLY CHANGE IS THE ACTION                                                                           ' INITIALIZE ACTION IN THE ORDER
+                order.OrderType = hi.ordertype                                                                                                                                          ' INITIALIZE THE ORDER TYPE IN THE ORDER - MOVE TO SETTINGS AT SOME POINT
+                order.Tif = hi.inforce                                                                                                                                                  ' ORDER DURATION IS GOOD TIL CANCELLED (REFACTOR TO LEVERAGE THE CONTROL CARD DATA)                
+                order.TotalQuantity = hi.shares                                                                                                                                         ' INITIALIZE THE ORDER QUANTITY IN THE ORDER - MOVE TO SETTINGS AT SOME POINT 
+
+                If action = "BUY" Then
+                    order.LmtPrice = limitprice - hi.width                                                                                                                              ' INITIALIZE THE PRICE IN THE ORDER
+                    matchid = order.OrderId
+                Else
+                    order.LmtPrice = limitprice + hi.width                                                                                                                              ' INITIALIZE THE PRICE IN THE ORDER
+                End If
+
+                connected = TWSconnect()                                                                                                                                                ' CALLED FUNCTION TO CONNECT API TO TWS
+                Call Tws1.placeOrderEx(order.OrderId, contract, order)                                                                                                                  ' CALLED FUNCTION TO PLACE THE ORDER IN TWS
+                Thread.Sleep(1000)                                                                                                                                                      ' DELAY THREAD OF 1 SECOND
+                Tws1.disconnect()                                                                                                                                                       ' DISCONNECT FROM THE TWS API - THIS PREVENTS HAVING TO RESTART IF AN ERROR OCCURS LATER IN THE CODE
+
+                For Each item In Tws1.listOrderStatus
+                    If item.OrderID = order.OrderId Then
+                        pID = item.PermId
+                    Else
+                        pID = 0                                                                                                                                                         ' AN ERROR NEEDS TO BE THROWN HERE!!!
+                    End If
+                Next
+
+                Dim newStockOrder As New stockorder                                                                                                                                     ' OPEN NEW STRUCTURE FOR RECORD IN STOCK PRODUCTION TABLE.
+                TryUpdateModel(newStockOrder)                                                                                                                                           ' TEST CONNECTION TO DATABASE TABLES.
+                Dim newindex As New stockorder With {
+                                                            .timestamp = DateTime.Parse(Now).ToUniversalTime(),
+                                                            .OrderId = order.OrderId,
+                                                            .PermID = pID,
+                                                            .Symbol = contract.Symbol.ToUpper(),
+                                                            .Action = order.Action,
+                                                            .TickPrice = currentprice,
+                                                            .LimitPrice = order.LmtPrice,
+                                                            .Status = Tws1.Status,
+                                                            .Quantity = order.TotalQuantity,
+                                                            .OrderStatus = "Open",
+                                                            .roboIndex = robotindex,
+                                                            .matchID = matchid,
+                                                            .OrderTimestamp = DateTime.Parse(Now).ToUniversalTime()
+                                                        }                                                                                                                               ' OPEN THE NEW RECORD (BOUGHT POSITION) IN THE TABLE.
+
+                db.stockorders.InsertOnSubmit(newindex)                                                                                                                                 ' INSERT THE NEW RECORD TO BE ADDED.
+                db.SubmitChanges()                                                                                                                                                      ' SUBMIT THE CHANGES TO THE TABLE.
+
+            End Using
+
+            Return ordersent                                                                                                                                                            ' RETURN ORDER SENT VARIABLE TO CALLING FUNCTION
         End Function
 
     End Class

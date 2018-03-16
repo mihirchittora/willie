@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Database Name="DataSource" Class="wavesDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
-  <Connection Mode="WebSettings" ConnectionString="Data Source=optionwavesdb.db.8279406.hostedresource.com;User ID=optionwavesdb" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="DataSourceConnectionString" Provider="System.Data.SqlClient" />
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="optionwavesdb" Class="wavesDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="WebSettings" ConnectionString="Data Source=optionwavesdb.db.8279406.hostedresource.com;Initial Catalog=optionwavesdb;Integrated Security=False;User ID=optionwavesdb" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="optionwavesdbConnectionString" Provider="System.Data.SqlClient" />
   <Table Name="dbo.TradeDetails" Member="TradeDetails">
     <Type Name="TradeDetail">
       <Column Name="tradeID" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
@@ -121,26 +121,6 @@
       <Column Name="closerowid" Type="System.Int32" DbType="Int" CanBeNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.HarvestIndex" Member="HarvestIndexes">
-    <Type Name="HarvestIndex">
-      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="harvestKey" Type="System.String" DbType="NVarChar(12)" CanBeNull="true" />
-      <Column Name="userID" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
-      <Column Name="name" Type="System.String" DbType="NVarChar(140)" CanBeNull="true" />
-      <Column Name="product" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
-      <Column Name="opentrigger" Type="System.Decimal" DbType="Money" CanBeNull="true" />
-      <Column Name="width" Type="System.Decimal" DbType="Money" CanBeNull="true" />
-      <Column Name="timestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
-      <Column Name="active" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
-      <Column Name="shares" Type="System.Int32" DbType="Int" CanBeNull="true" />
-      <Column Name="hedge" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
-      <Column Name="hedgewidth" Type="System.Decimal" DbType="Money" CanBeNull="true" />
-      <Column Name="expdatewidth" Type="System.Int32" DbType="Int" CanBeNull="true" />
-      <Column Name="hedgelots" Type="System.Int32" DbType="Int" CanBeNull="true" />
-      <Column Name="pricetoprotect" Type="System.Decimal" DbType="Money" CanBeNull="true" />
-      <Column Name="OpeningMark" Type="System.Decimal" DbType="Money" CanBeNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.HarvestLogs" Member="HarvestLogs">
     <Type Name="HarvestLog">
       <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -163,6 +143,16 @@
       <Column Name="openingmark" Type="System.Decimal" DbType="Money" CanBeNull="true" />
     </Type>
   </Table>
+  <Table Name="dbo.positions" Member="positions">
+    <Type Name="position">
+      <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="timestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="lasttimestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="symbol" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="qty" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
+      <Column Name="roboIndex" Type="System.String" DbType="NVarChar(12)" CanBeNull="true" />
+    </Type>
+  </Table>
   <Table Name="dbo.stockorders" Member="stockorders">
     <Type Name="stockorder">
       <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -178,16 +168,33 @@
       <Column Name="OrderStatus" Type="System.String" DbType="NVarChar(10)" CanBeNull="true" />
       <Column Name="OrderTimestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
       <Column Name="roboIndex" Type="System.String" DbType="NVarChar(12)" CanBeNull="true" />
+      <Column Name="matchID" Type="System.String" DbType="NVarChar(15)" CanBeNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.positions" Member="positions">
-    <Type Name="position">
+  <Table Name="dbo.HarvestIndex" Member="HarvestIndexes">
+    <Type Name="HarvestIndex">
       <Column Name="id" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="harvestKey" Type="System.String" DbType="NVarChar(12)" CanBeNull="true" />
+      <Column Name="userID" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+      <Column Name="name" Type="System.String" DbType="NVarChar(140)" CanBeNull="true" />
+      <Column Name="product" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="opentrigger" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="width" Type="System.Decimal" DbType="Money" CanBeNull="true" />
       <Column Name="timestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
-      <Column Name="lasttimestamp" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
-      <Column Name="symbol" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
-      <Column Name="qty" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
-      <Column Name="roboIndex" Type="System.String" DbType="NVarChar(12)" CanBeNull="true" />
+      <Column Name="active" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="shares" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="hedge" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="hedgewidth" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="expdatewidth" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="hedgelots" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="pricetoprotect" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="OpeningMark" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="stocksectype" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="optsectype" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="currencytype" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="exchange" Type="System.String" DbType="NVarChar(10)" CanBeNull="true" />
+      <Column Name="ordertype" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
+      <Column Name="inforce" Type="System.String" DbType="NVarChar(4)" CanBeNull="true" />
     </Type>
   </Table>
 </Database>

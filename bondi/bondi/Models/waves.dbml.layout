@@ -44,28 +44,28 @@
         <elementListCompartment Id="c95dd4e5-3974-42d1-9d1a-a74484e1fa9b" absoluteBounds="0.51499999999999968, 9.46, 1.9700000000000002, 4.095418294270833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="125dea42-0947-4a83-8f3d-a06924533ae6" absoluteBounds="7, 6, 2, 3.8862125651041666">
-      <DataClassMoniker Name="/wavesDataContext/HarvestIndex" />
-      <nestedChildShapes>
-        <elementListCompartment Id="e897e722-33ec-4fea-80bf-5467bff9e17c" absoluteBounds="7.015, 6.46, 1.9700000000000002, 3.3262125651041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
     <classShape Id="c2ea2e82-6e30-4566-a177-8bf15e7c858b" absoluteBounds="4.75, 6, 2, 4.2708154296875">
       <DataClassMoniker Name="/wavesDataContext/HarvestLog" />
       <nestedChildShapes>
         <elementListCompartment Id="9ba21231-3421-4cb4-9b17-d4e06ce590b8" absoluteBounds="4.765, 6.46, 1.9700000000000002, 3.7108154296875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="e65b3b95-08c6-428c-ade4-7c600baedaa5" absoluteBounds="4.875, 0.5, 2, 3.3093082682291666">
-      <DataClassMoniker Name="/wavesDataContext/stockorder" />
-      <nestedChildShapes>
-        <elementListCompartment Id="431e4398-d53f-402c-b6d3-9cb226461933" absoluteBounds="4.89, 0.96, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
     <classShape Id="11c28c17-d687-41c0-9165-0063055c796d" absoluteBounds="7, 0.5, 2, 1.9631982421875">
       <DataClassMoniker Name="/wavesDataContext/position" />
       <nestedChildShapes>
         <elementListCompartment Id="dd042485-108e-4dd7-9048-9f40253e827e" absoluteBounds="7.0150000000000006, 0.96, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="176b625b-56ad-4d2b-8193-b1c7e546789f" absoluteBounds="4.75, 0.5, 2, 3.5016097005208326">
+      <DataClassMoniker Name="/wavesDataContext/stockorder" />
+      <nestedChildShapes>
+        <elementListCompartment Id="777f3cd8-c65e-4b01-b024-fd48adacd9ce" absoluteBounds="4.765, 0.96, 1.9700000000000002, 2.941609700520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <classShape Id="e11e45ff-6286-436a-9c61-4de887652868" absoluteBounds="6.875, 6, 2, 5.0400211588541657">
+      <DataClassMoniker Name="/wavesDataContext/HarvestIndex" />
+      <nestedChildShapes>
+        <elementListCompartment Id="bb3af395-b6f5-40af-9990-8c1324fe74a3" absoluteBounds="6.89, 6.46, 1.9700000000000002, 4.4800211588541661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
   </nestedChildShapes>

@@ -168,7 +168,7 @@ Friend Class Tws
         'Dim orderIDList As OrderIds = New OrderIds(orderId)                                                                                                                                                            ' SET THE CURRENT ORDER ID TO INCREMENT BEFORE SENDING THE NEXT ORDER.
         'MsgBox("NextValidId - OrderId [" & orderId & "]")
         nextOrderId = orderId
-
+        'Stop
     End Sub
     Public Sub openOrder(orderId As Integer, contract As IBApi.Contract, order As IBApi.Order, orderState As IBApi.OrderState) Implements IBApi.EWrapper.openOrder                                                      ' HANDLES ALL OF THE PROCESSING FOR OPEN ORDERS USING THE API.
 
@@ -220,10 +220,6 @@ Friend Class Tws
     End Sub
 
 
-
-
-
-
     'Public Sub orderStatus(orderId As Integer, status As String, filled As Double, remaining As Double, avgFillPrice As Double,
     '                       permId As Integer, parentId As Integer, lastFillPrice As Double, clientId As Integer, whyHeld As String) Implements IBApi.EWrapper.orderStatus
 
@@ -241,13 +237,6 @@ Friend Class Tws
     '    Me.Status = status
 
     'End Sub
-
-
-
-
-
-
-
 
 
     Public Sub position(account As String, contract As IBApi.Contract, pos As Double, avgCost As Double) Implements IBApi.EWrapper.position
@@ -295,6 +284,9 @@ Friend Class Tws
         Me.TickType = field
         Me.CanAutoExecute = canAutoExecute
         'cancelMktData(tickerId)
+
+        ' WILL NEED TO CHANGE THIS ONCE THE REAL TIME STREAM IS SET UP
+
         If Me.TickType = 68 Then
             Me.StockTickPrice = price
         End If
